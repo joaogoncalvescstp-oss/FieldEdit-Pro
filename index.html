@@ -507,6 +507,10 @@ const FBK_THEME = {
     { token: 'comment',    foreground: '4b5563', fontStyle: 'italic' },
     // H/V/CPN codes
     { token: 'variable',   foreground: '67e8f9' },
+    // Positional coords on F1/F2 lines
+    { token: 'fbk-c1',     foreground: 'ef4444' },
+    { token: 'fbk-c2',     foreground: 'b91c1c' },
+    { token: 'fbk-c3',     foreground: '67e8f9' },
   ],
   colors: {
     'editor.background':          '#13161e',
@@ -525,23 +529,67 @@ const FBK_THEME = {
 const FBK_TOKENS = {
   tokenizer: {
     root: [
-      // Delete marker — must be first
       [/##DELETE##/, 'invalid'],
-      // Line comment
       [/^\s*[!;#].*$/, 'comment'],
-      // Record type keywords at start of non-deleted line
+      // F1/F2 lines → enter positional-color state machine
+      [/^F[12]\b/, { token: 'keyword', next: '@f_rec' }],
       [/^(SS|BK|ST|OF|JB|TR|NE|JR|JL|LT|RT|AZ|BS|FS|RE|GN|AD|MO|ZD|NL|NC|SP|JD|JT|JW|JH|JV|HZ|VA|HD|VD|SL|SR|BL)\b/, 'keyword'],
-      // F1/F2 face indicators
-      [/\bF[12]\b/, 'keyword'],
-      // REF keyword
       [/\bREF\b/, 'type'],
-      // H / V / CPN codes (like H1.234 or V-0.050 or CPN123)
       [/\b(H|V|CPN)[0-9.\-]+/, 'variable'],
-      // Quoted string
       [/"[^"]*"/, 'string'],
-      // Numbers (coordinates, point IDs, angles)
       [/\b\d+(\.\d+)?\b/, 'number'],
-    ]
+    ],
+
+    // after F1/F2 — record type (VA, SS, …)
+    f_rec: [
+      [/[ \t]+/, ''],
+      [/(VA|SS|OF|JB|TR|NE|HZ|HD|VD|ZD|SL|SR|BL|BS|FS|RE|GN|AD|MO|NL|NC|SP|JD|JT|JW|JH|JV|AZ|ST|BK|RT|LT)\b/, { token: 'keyword', next: '@f_pt' }],
+      [/$/, { token: '', next: '@root' }],
+      [/./, { token: '', next: '@root' }],
+    ],
+
+    // point number → yellow
+    f_pt: [
+      [/[ \t]+/, ''],
+      [/\d+/, { token: 'number', next: '@f_c1' }],
+      [/$/, { token: '', next: '@root' }],
+      [/./, { token: '', next: '@root' }],
+    ],
+
+    // 1st coordinate (horiz angle) → red
+    f_c1: [
+      [/[ \t]+/, ''],
+      [/-?\d+(\.\d+)?/, { token: 'fbk-c1', next: '@f_c2' }],
+      [/$/, { token: '', next: '@root' }],
+      [/./, { token: '', next: '@root' }],
+    ],
+
+    // 2nd coordinate (vert angle) → darker red
+    f_c2: [
+      [/[ \t]+/, ''],
+      [/-?\d+(\.\d+)?/, { token: 'fbk-c2', next: '@f_c3' }],
+      [/$/, { token: '', next: '@root' }],
+      [/./, { token: '', next: '@root' }],
+    ],
+
+    // 3rd coordinate (distance) → cyan
+    f_c3: [
+      [/[ \t]+/, ''],
+      [/-?\d+(\.\d+)?/, { token: 'fbk-c3', next: '@f_tail' }],
+      [/$/, { token: '', next: '@root' }],
+      [/./, { token: '', next: '@root' }],
+    ],
+
+    // tail of F line: H/V codes, description string, etc.
+    f_tail: [
+      [/[ \t]+/, ''],
+      [/\b(H|V|CPN)[0-9.\-]+/, 'variable'],
+      [/"[^"]*"/, 'string'],
+      [/\bREF\b/, 'type'],
+      [/-?\d+(\.\d+)?/, 'number'],
+      [/$/, { token: '', next: '@root' }],
+      [/./, ''],
+    ],
   }
 };
 
