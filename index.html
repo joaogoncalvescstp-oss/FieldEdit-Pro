@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Field Book Pro</title>
+<script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #13161e;
+    --panel:     #181b24;
+    --border:    #252a38;
+    --accent:    #3b82f6;
+    --accent2:   #f59e0b;
+    --danger:    #ef4444;
+    --success:   #22c55e;
+    --muted:     #4b5563;
+    --text:      #e2e8f0;
+    --subtext:   #94a3b8;
+    --header-h:  46px;
+    --toolbar-h: 56px;
+  }
+
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; }
+
+  /* ── TOOLBAR ── */
+  #toolbar {
+    height: var(--toolbar-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  #toolbar label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-right: 8px;
+    white-space: nowrap;
+  }
+
+  .sep { width: 1px; height: 28px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+
+  .file-btn {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .file-btn input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+  }
+
+  button, .file-btn {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--panel);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+  button:hover, .file-btn:hover { background: var(--border); border-color: var(--accent); color: #fff; }
+
+  button.accent  { background: var(--accent);  border-color: var(--accent);  color: #fff; }
+  button.accent2 { background: var(--accent2); border-color: var(--accent2); color: #000; }
+  button.danger  { background: var(--danger);  border-color: var(--danger);  color: #fff; }
+  button.success { background: var(--success); border-color: var(--success); color: #000; }
+
+  #fbkName { font-size: 10px; color: var(--subtext); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── MAIN LAYOUT ── */
+  #main {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--toolbar-h));
+  }
+
+  #editors {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1px solid var(--border);
+  }
+  .pane:last-child { border-right: none; }
+
+  .pane-header {
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .pane-header .pane-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .pane-title.orig  { color: var(--subtext); }
+  .pane-title.mod   { color: var(--accent);  }
+
+  .badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: var(--border);
+    color: var(--subtext);
+  }
+  .badge.changed { background: #2a2510; color: var(--accent2); }
+  .badge.deleted { background: #1f0e0e; color: var(--danger); }
+
+  .editor-wrap { flex: 1; min-height: 0; }
+
+  /* ── OFFSET TABLE ── */
+  #offsetArea {
+    height: 180px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  /* ── CODE DATABASE ── */
+  #codeArea {
+    height: 200px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  #offsetArea .oa-header, #codeArea .oa-header {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    flex-shrink: 0;
+  }
+  .oa-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: var(--accent2);
+    text-transform: uppercase;
+  }
+
+  #offsetScroll {
+    overflow: auto;
+    flex: 1;
+    padding: 4px 8px;
+  }
+
+  #codeScroll {
+    overflow: auto;
+    flex: 1;
+    padding: 4px 8px;
+  }
+
+  #offsetTable {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 11px;
+  }
+  #offsetTable th {
+    background: var(--panel);
+    color: var(--subtext);
+    padding: 4px 8px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  #offsetTable td {
+    padding: 3px 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  #offsetTable td[contenteditable=true] {
+    outline: none;
+    background: transparent;
+  }
+  #offsetTable td[contenteditable=true]:focus {
+    background: #1e2533;
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+  #offsetTable tr:hover td { background: #181d2a; }
+
+  #codeTable {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 10px;
+  }
+  #codeTable th {
+    background: var(--panel);
+    color: var(--subtext);
+    padding: 3px 6px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  #codeTable td {
+    padding: 2px 6px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  #codeTable tr:hover td { background: #181d2a; }
+  #codeTable td.code-valid { color: var(--success); }
+  #codeTable td.code-warning { color: var(--accent2); }
+  #codeTable td.code-error { color: var(--danger); }
+
+  /* ── STATUS BAR ── */
+  #statusbar {
+    height: 22px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 16px;
+    font-size: 10px;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  #statusbar span { opacity: 0.85; }
+  #statusbar .stat-val { opacity: 1; font-weight: 700; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* toast */
+  #toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--panel); border: 1px solid var(--accent); color: var(--text);
+    padding: 8px 18px; border-radius: 6px; font-size: 12px; z-index: 9999;
+    opacity: 0; transition: opacity 0.25s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ── FIX B/E PREVIEW MODAL ── */
+  #fixModal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000;
+    display: none; align-items: center; justify-content: center;
+  }
+  #fixModal.open { display: flex; }
+  .fix-modal-box {
+    background: var(--panel); border: 1px solid var(--accent2); border-radius: 8px;
+    width: 600px; max-height: 72vh; display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .fix-modal-head {
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .fix-modal-title {
+    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 15px; color: var(--accent2);
+  }
+  .fix-modal-list { overflow-y: auto; flex: 1; }
+  .fix-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 14px; border-bottom: 1px solid var(--border);
+  }
+  .fix-row:hover { background: #181d2a; }
+  .fix-row input[type=checkbox] { cursor: pointer; accent-color: var(--accent2); flex-shrink: 0; }
+  .fix-badge-code {
+    background: var(--accent2); color: #000;
+    padding: 1px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; white-space: nowrap;
+  }
+  .fix-badge-b { background: var(--accent); color: #fff; padding: 1px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+  .fix-badge-e { background: var(--success); color: #000; padding: 1px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+  .fix-line-num { color: var(--subtext); font-size: 10px; white-space: nowrap; min-width: 54px; }
+  .fix-code-preview {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--subtext);
+    background: var(--bg); padding: 2px 6px; border-radius: 3px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
+  }
+  .fix-modal-foot {
+    padding: 10px 16px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── TOOLBAR ── -->
+<div id="toolbar">
+  <label>⊞ FBK Pro</label>
+  <div class="sep"></div>
+
+  <div class="file-btn" title="Load FBK file">
+    📂 Load FBK
+    <input type="file" id="fileInput" accept=".fbk,.txt,.fbd,.raw">
+  </div>
+  <span id="fbkName">no file</span>
+
+  <div class="sep"></div>
+
+  <div class="file-btn" title="Load Curb DB CSV">
+    🗂 load Curb DB
+    <input type="file" id="curbFileInput" accept=".csv,.txt">
+  </div>
+  <button onclick="loadCurbDB()">Apply DB</button>
+
+  <div class="sep"></div>
+
+  <button onclick="removeREF()" title="Mark REF lines for deletion">✕ REF</button>
+  <button onclick="fixCodes()"  title="Strip spaces from H/V/CPN codes">Fix H/V</button>
+  <button onclick="verifyCodePairs()" title="Verify all codes have B and E pairs">✓ Verify B/E</button>
+  <button onclick="fixCodePairs()" title="Auto-add missing B and E markers" class="accent2">⚡ Fix B/E</button>
+  <button onclick="applyCurbDB()">↺ Curb</button>
+  <button onclick="processFBK()" class="accent2">⚙ Knockdown</button>
+
+  <div class="sep"></div>
+
+  <button onclick="markDelete()" class="danger">🗑 Delete</button>
+  <button onclick="markEdit()" title="Mark selected lines as edited (blue)" style="background: var(--accent); border-color: var(--accent); color: #000;">📝 Edit</button>
+
+  <div class="sep"></div>
+
+  <button onclick="saveProgress()" class="accent">💾 Save</button>
+  <button onclick="loadProgress()">📤 Load</button>
+  <button onclick="exportTXT()" class="success">⬇ Export</button>
+
+  <div class="sep"></div>
+
+  <button onclick="syncScrollToggle()" id="syncBtn" class="accent" title="Toggle synced scrolling">🔗 Sync</button>
+</div>
+
+<!-- ── MAIN ── -->
+<div id="main">
+  <div id="editors">
+
+    <!-- LEFT: Original read-only -->
+    <div class="pane">
+      <div class="pane-header">
+        <span class="pane-title orig">Original</span>
+        <span class="badge" id="badgeLines">0 lines</span>
+        <span class="badge changed" id="badgeChanged">0 changed</span>
+        <span class="badge deleted" id="badgeDeleted">0 deleted</span>
+      </div>
+      <div class="editor-wrap" id="leftEditor"></div>
+    </div>
+
+    <!-- RIGHT: Modified editable -->
+    <div class="pane">
+      <div class="pane-header">
+        <span class="pane-title mod">Modified</span>
+        <span style="font-size:10px; color:var(--subtext); margin-left:auto;">ctrl+z = undo · ctrl+/ = comment</span>
+      </div>
+      <div class="editor-wrap" id="rightEditor"></div>
+    </div>
+
+  </div>
+
+  <!-- ── OFFSET TABLE ── -->
+  <div id="offsetArea">
+    <div class="oa-header">
+      <span class="oa-title">📐 Knockdown Table</span>
+      <button onclick="addOffsetRow()" style="height:24px; font-size:11px;">➕ Row</button>
+      <button onclick="clearOffsetTable()" style="height:24px; font-size:11px;">🗑 Clear</button>
+    </div>
+    <div id="offsetScroll">
+      <table id="offsetTable">
+        <thead><tr><th>Point #</th><th>Code</th><th>V Offset</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── CODE DATABASE ── -->
+  <div id="codeArea">
+    <div class="oa-header">
+      <span class="oa-title">📚 CODE DATABASE</span>
+      <button onclick="extractCodesToDatabase()" style="height:24px; font-size:11px; background:var(--accent2); border-color:var(--accent2); color:#000;">⟳ Extract</button>
+      <button onclick="clearCodeDatabase()" style="height:24px; font-size:11px; background:var(--danger); border-color:var(--danger); color:#fff;">🗑 Clear</button>
+    </div>
+    <div id="codeScroll">
+      <table id="codeTable">
+        <thead><tr><th>Base Code</th><th>Variants</th><th>Count</th><th>First</th><th>Last</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── STATUS BAR ── -->
+  <div id="statusbar">
+    <span>LINES <span class="stat-val" id="stLines">0</span></span>
+    <span>CHANGED <span class="stat-val" id="stChanged">0</span></span>
+    <span>DELETED <span class="stat-val" id="stDeleted">0</span></span>
+    <span>CURB DB <span class="stat-val" id="stCurb">—</span></span>
+    <span id="stMsg" style="margin-left:auto;"></span>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ── FIX B/E PREVIEW MODAL ── -->
+<div id="fixModal">
+  <div class="fix-modal-box">
+    <div class="fix-modal-head">
+      <span class="fix-modal-title">⚡ FIX B/E PREVIEW</span>
+      <span id="fixCount" style="font-size:11px; color:var(--subtext);"></span>
+      <div style="margin-left:auto; display:flex; gap:6px;">
+        <button onclick="fixModalSelectAll(true)"  style="height:24px; font-size:10px; padding:0 8px;">✓ All</button>
+        <button onclick="fixModalSelectAll(false)" style="height:24px; font-size:10px; padding:0 8px;">✕ None</button>
+      </div>
+    </div>
+    <div id="fixList" class="fix-modal-list"></div>
+    <div class="fix-modal-foot">
+      <span style="font-size:10px; color:var(--subtext);">✓ See each fix · Uncheck to skip · Bulk select/deselect</span>
+      <div style="margin-left:auto; display:flex; gap:8px;">
+        <button onclick="closeFix()" style="height:28px;">Skip All</button>
+        <button onclick="applySelectedFixes()" class="accent2" style="height:28px;">⚡ Apply Selected</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } });
+
+let leftEditor, rightEditor;
+let loadedBaseName = 'fieldbook';
+let originalData = [];
+let data = [];
+let curbDB = {};
+let syncScroll = true;
+let scrollingLeft = false, scrollingRight = false;
+let pendingFixes = [];
+
+const LINEWORK_CODES = new Set([
+  'UTEL', 'UPP', 'UGAS', 'UFO', 'UEL', 'UCATV', 'TWE', 'TTW', 'TRL', 'TPLTR',
+  'TOP', 'TOE', 'TMS', 'TGDN', 'TGB', 'TFNC', 'TBW', 'TBSH', 'RWLK', 'RWCL',
+  'RWBK', 'RTW', 'RTOC', 'RTILE', 'RSTP', 'RRTC', 'RR', 'RPCL', 'RMONO', 'RLTC',
+  'RJNT', 'RGTC', 'RGR', 'RGED', 'RGCL', 'REP', 'RDRG', 'RDRC', 'RDRB', 'RDRA',
+  'RCFL', 'RCED', 'RCCL', 'RBTC', 'RBRK', 'RBIT', 'RBCL', 'RBCB', 'RAMP', 'OWW',
+  'OSET', 'ORIP', 'ORBR', 'OPRP', 'OPIR', 'OPIL', 'OMDL', 'OGRD', 'OFTG', 'OEXP',
+  'OCOL', 'OCBL', 'OCAP', 'OBRG', 'OBEM', 'OBDR', 'OBDK', 'OARC', 'OAPS', 'OAPR',
+  'OABT', 'MISCL', 'BLD', 'BHR', 'BGCR', 'BDEC', 'BCAN'
+]);
+
+/* ─── FBK TOKEN COLORS ─── */
+const FBK_THEME = {
+  base: 'vs-dark',
+  inherit: true,
+  rules: [
+    // SS/BK/ST/OF record types
+    { token: 'keyword',    foreground: '3b82f6', fontStyle: 'bold' },
+    // Point numbers
+    { token: 'number',     foreground: 'f59e0b' },
+    // Codes / descriptions in quotes
+    { token: 'string',     foreground: '22c55e' },
+    // Coordinates
+    { token: 'constant',   foreground: 'a78bfa' },
+    // REF keyword
+    { token: 'type',       foreground: 'fb923c', fontStyle: 'italic' },
+    // DELETE marker
+    { token: 'invalid',    foreground: 'ef4444', fontStyle: 'bold' },
+    // Comments
+    { token: 'comment',    foreground: '4b5563', fontStyle: 'italic' },
+    // H/V/CPN codes
+    { token: 'variable',   foreground: '67e8f9' },
+  ],
+  colors: {
+    'editor.background':          '#13161e',
+    'editor.foreground':          '#e2e8f0',
+    'editor.lineHighlightBackground': '#1e2533',
+    'editorLineNumber.foreground':    '#374151',
+    'editorLineNumber.activeForeground': '#60a5fa',
+    'editorCursor.foreground':        '#001d3f',
+    'editor.selectionBackground':     '#1d4ed8aa',
+    'editorWidget.background':        '#181b24',
+    'editorSuggestWidget.background': '#181b24',
+  }
+};
+
+/* ─── FBK LANGUAGE ─── */
+const FBK_TOKENS = {
+  tokenizer: {
+    root: [
+      // Delete marker — must be first
+      [/##DELETE##/, 'invalid'],
+      // Line comment
+      [/^\s*[!;#].*$/, 'comment'],
+      // Record type keywords at start of non-deleted line
+      [/^(SS|BK|ST|OF|JB|TR|NE|JR|JL|LT|RT|AZ|BS|FS|RE|GN|AD|MO|ZD|NL|NC|SP|JD|JT|JW|JH|JV|HZ|VA|HD|VD|SL|SR|BL)\b/, 'keyword'],
+      // F1/F2 face indicators
+      [/\bF[12]\b/, 'keyword'],
+      // REF keyword
+      [/\bREF\b/, 'type'],
+      // H / V / CPN codes (like H1.234 or V-0.050 or CPN123)
+      [/\b(H|V|CPN)[0-9.\-]+/, 'variable'],
+      // Quoted string
+      [/"[^"]*"/, 'string'],
+      // Numbers (coordinates, point IDs, angles)
+      [/\b\d+(\.\d+)?\b/, 'number'],
+    ]
+  }
+};
+
+require(['vs/editor/editor.main'], function () {
+
+  monaco.languages.register({ id: 'fbk' });
+  monaco.languages.setMonarchTokensProvider('fbk', FBK_TOKENS);
+  monaco.editor.defineTheme('fbk-dark', FBK_THEME);
+
+  const common = {
+    language: 'fbk',
+    theme: 'fbk-dark',
+    automaticLayout: true,
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 12,
+    lineHeight: 18,
+    minimap: { enabled: true, renderCharacters: false },
+    scrollbar: { vertical: 'visible', horizontal: 'visible', verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+    renderLineHighlight: 'all',
+    roundedSelection: false,
+    renderWhitespace: 'none',
+    glyphMargin: false,
+    folding: false,
+    lineDecorationsWidth: 4,
+    scrollBeyondLastLine: false,
+  };
+
+  leftEditor = monaco.editor.create(document.getElementById('leftEditor'), {
+    ...common,
+    value: '',
+    readOnly: true,
+    lineNumbers: 'on',
+    contextmenu: false,
+  });
+
+  rightEditor = monaco.editor.create(document.getElementById('rightEditor'), {
+    ...common,
+    value: '',
+    readOnly: false,
+    lineNumbers: 'on',
+  });
+
+  // ── SYNCED SCROLLING ──
+  leftEditor.onDidScrollChange(() => {
+    if (!syncScroll || scrollingRight) return;
+    scrollingLeft = true;
+    rightEditor.setScrollTop(leftEditor.getScrollTop());
+    rightEditor.setScrollLeft(leftEditor.getScrollLeft());
+    scrollingLeft = false;
+  });
+
+  rightEditor.onDidScrollChange(() => {
+    if (!syncScroll || scrollingLeft) return;
+    scrollingRight = true;
+    leftEditor.setScrollTop(rightEditor.getScrollTop());
+    leftEditor.setScrollLeft(rightEditor.getScrollLeft());
+    scrollingRight = false;
+  });
+
+  // ── DECORATION for DELETE lines in left editor ──
+  rightEditor.onDidChangeModelContent(() => {
+    syncFromEditor();
+    updateStats();
+    decorateLeft();
+  });
+});
+
+/* ─── DECORATIONS ─── */
+let leftDecorations = [];
+let rightDecorations = [];
+
+function decorateLeft() {
+  if (!leftEditor) return;
+
+  // inject CSS once
+  if (!document.getElementById('deco-style')) {
+    const s = document.createElement('style');
+    s.id = 'deco-style';
+    s.textContent = `
+      .line-changed { background: #0d1f3c80 !important; border-left: 3px solid #3b82f6; }
+      .line-deleted { background: #1f0e0e80 !important; border-left: 3px solid #ef4444; }
+      .line-changed-right { background: #0d1f3c60 !important; border-left: 3px solid #3b82f6; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  const leftDeco = [];
+  const rightDeco = [];
+
+  data.forEach((line, i) => {
+    if (line === originalData[i]) return;
+    const isDeleted = line.startsWith('##DELETE##') || line.startsWith('##DELETED##');
+
+    // Original panel — blue for changed, red for deleted
+    leftDeco.push({
+      range: new monaco.Range(i + 1, 1, i + 1, 1),
+      options: {
+        isWholeLine: true,
+        className: isDeleted ? 'line-deleted' : 'line-changed',
+        overviewRulerColor: isDeleted ? '#ef444488' : '#3b82f688',
+        overviewRulerLane: monaco.editor.OverviewRulerLane.Left,
+      }
+    });
+
+    // Modified panel — blue gutter stripe for changed lines
+    if (!isDeleted) {
+      rightDeco.push({
+        range: new monaco.Range(i + 1, 1, i + 1, 1),
+        options: {
+          isWholeLine: true,
+          className: 'line-changed-right',
+          overviewRulerColor: '#3b82f688',
+          overviewRulerLane: monaco.editor.OverviewRulerLane.Right,
+        }
+      });
+    }
+  });
+
+  leftDecorations  = leftEditor.deltaDecorations(leftDecorations,  leftDeco);
+  if (rightEditor) rightDecorations = rightEditor.deltaDecorations(rightDecorations, rightDeco);
+}
+
+/* ─── FILE LOAD ─── */
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('fbkName').textContent = file.name;
+  loadedBaseName = file.name.replace(/\.[^.]+$/, '');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const lines = ev.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    originalData = [...lines];
+    data = [...lines];
+    if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
+    if (rightEditor) rightEditor.setValue(data.join('\n'));
+    updateStats();
+    toast('Loaded ' + lines.length + ' lines');
+  };
+  reader.readAsText(file);
+});
+
+/* ─── CURB DB ─── */
+let curbFileReady = false;
+document.getElementById('curbFileInput').addEventListener('change', () => { curbFileReady = true; });
+
+function loadCurbDB() {
+  const file = document.getElementById('curbFileInput').files[0];
+  if (!file) { toast('Select a Curb DB file first'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    curbDB = {};
+    ev.target.result.split('\n').forEach(line => {
+      const parts = line.split(',');
+      if (parts.length >= 2) curbDB[parts[0].trim()] = parts[1].trim();
+    });
+    document.getElementById('stCurb').textContent = Object.keys(curbDB).length;
+    toast('Curb DB: ' + Object.keys(curbDB).length + ' types');
+  };
+  reader.readAsText(file);
+}
+
+/* ─── SYNC ─── */
+function syncFromEditor() {
+  if (rightEditor) data = rightEditor.getValue().split('\n');
+}
+
+function pushToEditor() {
+  if (rightEditor) {
+    rightEditor.setValue(data.join('\n'));
+    applyEditHighlighting();
+  }
+  // Highlight differences in left panel
+  if (leftEditor && window.toolModifiedLines) {
+    applyLeftPanelHighlighting();
+  }
+}
+
+function applyLeftPanelHighlighting() {
+  if (!leftEditor || !window.toolModifiedLines) return;
+  
+  const decorations = [];
+  
+  window.toolModifiedLines.forEach(lineNum => {
+    decorations.push({
+      range: new monaco.Range(lineNum, 1, lineNum, 1),
+      options: {
+        isWholeLine: true,
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',  // Blue highlight
+        borderLeft: '3px solid #3b82f6'
+      }
+    });
+  });
+  
+  if (leftEditor.deltaDecorations) {
+    leftEditor.deltaDecorations([], decorations);
+  }
+}
+
+/* ─── TOOLS ─── */
+function removeREF() {
+  syncFromEditor();
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US');
+  const dateStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+  const timestamp = `Deleted ${timeStr} ${dateStr}`;
+  
+  data = data.map(l => l.includes('REF') ? '##DELETED## ' + timestamp + ' | ' + l : l);
+  pushToEditor();
+  toast('REF lines marked for deletion');
+}
+
+function fixCodes() {
+  syncFromEditor();
+  data = data.map(l =>
+    l.replace(/H\s+/g, 'H')
+     .replace(/V\s+/g, 'V')
+     .replace(/CPN\s+/g, 'CPN')
+  );
+  pushToEditor();
+  toast('H/V/CPN codes fixed');
+}
+
+function verifyCodePairs() {
+  syncFromEditor();
+
+  const codePattern = /^F[12] VA \d+.*"([^"]*)"$/;
+  const allCodes = new Set();
+  const issues = [];
+  
+  // Find all linework codes that appear in data
+  data.forEach((line, idx) => {
+    const match = line.match(codePattern);
+    if (!match) return;
+    const desc = match[1];
+    
+    LINEWORK_CODES.forEach(code => {
+      if (desc.includes(code)) {
+        allCodes.add(code);
+      }
+    });
+  });
+  
+  // For each linework code, verify it has proper B and E markers
+  allCodes.forEach(code => {
+    let hasB = false, hasE = false;
+    let firstB = -1, lastE = -1;
+    
+    data.forEach((line, idx) => {
+      const match = line.match(codePattern);
+      if (!match) return;
+      const desc = match[1];
+      
+      if (desc.includes(code)) {
+        if (desc.includes(code + ' B') || new RegExp(code + '\\s+B\\b').test(desc)) {
+          hasB = true;
+          if (firstB === -1) firstB = idx;
+        }
+        if (desc.includes(code + ' E') || new RegExp(code + '\\s+E\\b').test(desc)) {
+          hasE = true;
+          lastE = idx;
+        }
+      }
+    });
+    
+    // Report issues - linework codes MUST have both B and E
+    // EXCEPT if CLS (close polygon) is on the last line - then E is not needed
+    const lastLineContent = data[allCodes.size > 0 ? [...allCodes].indexOf(code) : 0];
+    
+    // Find the actual last line where code appears
+    let lastLineWithCode = -1;
+    data.forEach((line, idx) => {
+      const match = line.match(codePattern);
+      if (match && match[1].includes(code)) {
+        lastLineWithCode = idx;
+      }
+    });
+    
+    const hasCLSOnLastLine = lastLineWithCode >= 0 && (data[lastLineWithCode].includes(' CLS') || data[lastLineWithCode].includes('CLS '));
+    
+    if (!hasB && !hasE) {
+      issues.push(`⚠ Code "${code}" has NO B or E markers`);
+    } else if (hasB && !hasE) {
+      // Only flag missing E if CLS is NOT present
+      if (!hasCLSOnLastLine) {
+        issues.push(`⚠ Code "${code}" has B but NO E (last B at line ${firstB + 1})`);
+      }
+    } else if (!hasB && hasE) {
+      issues.push(`⚠ Code "${code}" has E but NO B (last E at line ${lastE + 1})`);
+    }
+  });
+  
+  if (issues.length === 0) {
+    toast('✓ All linework codes have valid B/E pairs!');
+  } else {
+    toast(`Found ${issues.length} linework code issues:`);
+    alert('LINEWORK CODE VERIFICATION REPORT\n\n' + issues.slice(0, 20).join('\n') + (issues.length > 20 ? `\n\n... and ${issues.length - 20} more` : ''));
+  }
+}
+
+function fixCodePairs() {
+  syncFromEditor();
+
+  const codePattern    = /^F[12] VA (\d+).*"([^"]*)"$/;
+  const codePatternFix = /^(F[12] VA \d+.*)"([^"]*)"(.*)$/;
+
+  // Pass 1: track first/last line and existing B/E for each code
+  const codeTracking = {};
+  data.forEach((line, lineIdx) => {
+    const match = line.match(codePattern);
+    if (!match) return;
+    const desc = match[2];
+    LINEWORK_CODES.forEach(code => {
+      if (!desc.includes(code)) return;
+      if (!codeTracking[code]) {
+        codeTracking[code] = { firstLine: lineIdx, lastLine: lineIdx, hasB: false, hasE: false };
+      }
+      codeTracking[code].lastLine = lineIdx;
+      if (desc.includes(code + ' B') || new RegExp(code + '\\s+B\\b').test(desc)) codeTracking[code].hasB = true;
+      if (desc.includes(code + ' E') || new RegExp(code + '\\s+E\\b').test(desc)) codeTracking[code].hasE = true;
+    });
+  });
+
+  // Pass 2: collect proposed fixes (no changes to data yet)
+  pendingFixes = [];
+  data.forEach((line, lineIdx) => {
+    const match = line.match(codePatternFix);
+    if (!match) return;
+    const prefix = match[1], desc = match[2], suffix = match[3];
+
+    Object.keys(codeTracking).forEach(code => {
+      const t = codeTracking[code];
+
+      if (lineIdx === t.firstLine && !t.hasB && !desc.includes(code + ' B')) {
+        const newDesc = desc.replace(new RegExp('\\b' + code + '\\b'), code + ' B');
+        pendingFixes.push({ lineIdx, code, markerType: 'B', lineNum: lineIdx + 1,
+          newLine: prefix + '"' + newDesc + '"' + suffix, newDesc });
+      }
+
+      if (lineIdx === t.lastLine && !t.hasE && !desc.includes(code + ' E')) {
+        const hasCLS = line.includes(' CLS') || line.includes('CLS ');
+        if (!hasCLS) {
+          const newDesc = desc.replace(new RegExp('\\b' + code + '\\b'), code + ' E');
+          pendingFixes.push({ lineIdx, code, markerType: 'E', lineNum: lineIdx + 1,
+            newLine: prefix + '"' + newDesc + '"' + suffix, newDesc });
+        }
+      }
+    });
+  });
+
+  if (pendingFixes.length === 0) {
+    toast('✓ No fixes needed - all codes already valid!');
+    return;
+  }
+
+  showFixModal();
+}
+
+function showFixModal() {
+  const list = document.getElementById('fixList');
+  document.getElementById('fixCount').textContent =
+    pendingFixes.length + ' proposed fix' + (pendingFixes.length !== 1 ? 'es' : '');
+
+  list.innerHTML = '';
+  pendingFixes.forEach((fix, i) => {
+    const row = document.createElement('div');
+    row.className = 'fix-row';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = true; cb.id = 'fix_' + i;
+    row.appendChild(cb);
+
+    const codeBadge = document.createElement('span');
+    codeBadge.className = 'fix-badge-code'; codeBadge.textContent = fix.code;
+    row.appendChild(codeBadge);
+
+    const markerBadge = document.createElement('span');
+    markerBadge.className = fix.markerType === 'B' ? 'fix-badge-b' : 'fix-badge-e';
+    markerBadge.textContent = fix.markerType;
+    row.appendChild(markerBadge);
+
+    const lineNum = document.createElement('span');
+    lineNum.className = 'fix-line-num'; lineNum.textContent = 'Line ' + fix.lineNum;
+    row.appendChild(lineNum);
+
+    const preview = document.createElement('span');
+    preview.className = 'fix-code-preview';
+    preview.title = fix.newLine;
+    preview.textContent = '"' + fix.newDesc + '"';
+    row.appendChild(preview);
+
+    list.appendChild(row);
+  });
+
+  document.getElementById('fixModal').classList.add('open');
+}
+
+function fixModalSelectAll(state) {
+  pendingFixes.forEach((_, i) => {
+    const cb = document.getElementById('fix_' + i);
+    if (cb) cb.checked = state;
+  });
+}
+
+function closeFix() {
+  document.getElementById('fixModal').classList.remove('open');
+  pendingFixes = [];
+  toast('Fixes skipped');
+}
+
+function applySelectedFixes() {
+  const selected = pendingFixes.filter((_, i) => {
+    const cb = document.getElementById('fix_' + i);
+    return cb && cb.checked;
+  });
+
+  document.getElementById('fixModal').classList.remove('open');
+  pendingFixes = [];
+
+  if (selected.length === 0) { toast('No fixes selected'); return; }
+
+  // Group by line so multiple fixes on the same line apply in sequence
+  const byLine = {};
+  selected.forEach(fix => {
+    if (!byLine[fix.lineIdx]) byLine[fix.lineIdx] = [];
+    byLine[fix.lineIdx].push(fix);
+  });
+
+  const codePatternFix = /^(F[12] VA \d+.*)"([^"]*)"(.*)$/;
+  const modifiedLineIndices = new Set();
+
+  data = data.map((line, lineIdx) => {
+    if (!byLine[lineIdx]) return line;
+    const match = line.match(codePatternFix);
+    if (!match) return line;
+    const prefix = match[1], suffix = match[3];
+    let desc = match[2];
+    byLine[lineIdx].forEach(fix => {
+      desc = desc.replace(new RegExp('\\b' + fix.code + '\\b'), fix.code + ' ' + fix.markerType);
+    });
+    modifiedLineIndices.add(lineIdx);
+    return prefix + '"' + desc + '"' + suffix;
+  });
+
+  if (!window.toolModifiedLines) window.toolModifiedLines = new Set();
+  modifiedLineIndices.forEach(idx => window.toolModifiedLines.add(idx + 1));
+
+  pushToEditor();
+  updateStats();
+  toast(`⚡ Applied ${selected.length} fix(es) across ${modifiedLineIndices.size} line(s)`);
+}
+
+function extractCodesToDatabase() {
+  syncFromEditor();
+
+  const codePattern = /^F[12] VA (\d+).*"([^"]*)"$/;
+  const codeMap = {};
+  
+  data.forEach((line, lineIdx) => {
+    const match = line.match(codePattern);
+    if (!match) return;
+    const desc = match[2];
+    
+    // Check for linework codes with optional number suffix (e.g., RWLK, RWLK1, RWLK2, etc.)
+    LINEWORK_CODES.forEach(baseCode => {
+      // Match base code or base code with digit (RWLK, RWLK1, RWLK2, etc.)
+      const regex = new RegExp('\\b(' + baseCode + '\\d?)\\b');
+      const matches = desc.match(regex);
+      
+      if (matches) {
+        const codeWithVariant = matches[1]; // e.g., "RWLK1"
+        
+        if (!codeMap[baseCode]) {
+          codeMap[baseCode] = {
+            variants: new Set(),
+            count: 0,
+            firstLine: lineIdx + 1,
+            lastLine: lineIdx + 1,
+            hasB: false,
+            hasE: false
+          };
+        }
+        
+        // Extract variant number if present
+        const variantMatch = codeWithVariant.match(/\d+/);
+        if (variantMatch) {
+          codeMap[baseCode].variants.add(variantMatch[0]);
+        }
+        
+        codeMap[baseCode].count++;
+        codeMap[baseCode].lastLine = lineIdx + 1;
+        
+        // Check for B/E markers
+        if (desc.includes(codeWithVariant + ' B') || new RegExp(codeWithVariant + '\\s+B\\b').test(desc)) {
+          codeMap[baseCode].hasB = true;
+        }
+        if (desc.includes(codeWithVariant + ' E') || new RegExp(codeWithVariant + '\\s+E\\b').test(desc)) {
+          codeMap[baseCode].hasE = true;
+        }
+      }
+    });
+  });
+  
+  // Populate table
+  const tbody = document.getElementById('codeTable').tBodies[0];
+  tbody.innerHTML = '';
+  
+  Object.keys(codeMap).sort().forEach(baseCode => {
+    const info = codeMap[baseCode];
+    const tr = document.createElement('tr');
+    
+    const tdBase = document.createElement('td');
+    tdBase.textContent = baseCode;
+    tr.appendChild(tdBase);
+    
+    const tdVar = document.createElement('td');
+    tdVar.textContent = info.variants.size > 0 ? Array.from(info.variants).sort().join(',') : '—';
+    tdVar.style.fontSize = '9px';
+    tr.appendChild(tdVar);
+    
+    const tdCount = document.createElement('td');
+    tdCount.textContent = info.count;
+    tr.appendChild(tdCount);
+    
+    const tdFirst = document.createElement('td');
+    tdFirst.textContent = info.firstLine;
+    tdFirst.style.fontSize = '9px';
+    tr.appendChild(tdFirst);
+    
+    const tdLast = document.createElement('td');
+    tdLast.textContent = info.lastLine;
+    tdLast.style.fontSize = '9px';
+    tr.appendChild(tdLast);
+    
+    const tdStatus = document.createElement('td');
+    if (!info.hasB && !info.hasE) {
+      tdStatus.textContent = '• Single';
+      tdStatus.className = 'code-valid';
+    } else if (info.hasB && info.hasE) {
+      tdStatus.textContent = '✓ Valid';
+      tdStatus.className = 'code-valid';
+    } else if (info.hasB && !info.hasE) {
+      tdStatus.textContent = '⚠ No E';
+      tdStatus.className = 'code-warning';
+    } else {
+      tdStatus.textContent = '⚠ No B';
+      tdStatus.className = 'code-error';
+    }
+    tr.appendChild(tdStatus);
+    
+    tbody.appendChild(tr);
+  });
+  
+  toast(`📚 Extracted ${Object.keys(codeMap).length} codes`);
+}
+
+function clearCodeDatabase() {
+  document.getElementById('codeTable').tBodies[0].innerHTML = '';
+  toast('Code database cleared');
+}
+
+function applyCurbDB() {
+  syncFromEditor();
+  data = data.map(l => {
+    Object.keys(curbDB).forEach(c => {
+      if (l.includes(c)) l = l.replace(c, curbDB[c]);
+    });
+    return l;
+  });
+  pushToEditor();
+  toast('Curb DB applied');
+}
+
+function markDelete() {
+  if (!rightEditor) return;
+  syncFromEditor();
+  
+  // Get current date/time in format: HH:MM:SS AM/PM M/D/YYYY
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US');
+  const dateStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+  const timestamp = `Deleted ${timeStr} ${dateStr}`;
+  
+  const sel = rightEditor.getSelection();
+  for (let i = sel.startLineNumber - 1; i < sel.endLineNumber; i++) {
+    if (!data[i].startsWith('##DELETE##')) {
+      data[i] = '##DELETED## ' + timestamp + ' | ' + data[i];
+    }
+  }
+  pushToEditor();
+  toast(`Marked ${sel.endLineNumber - sel.startLineNumber + 1} line(s) for deletion`);
+}
+
+function markEdit() {
+  if (!rightEditor) return;
+  syncFromEditor();
+  
+  // Store edited line numbers in a separate tracking object
+  if (!window.editedLines) window.editedLines = new Set();
+  
+  const sel = rightEditor.getSelection();
+  for (let i = sel.startLineNumber - 1; i < sel.endLineNumber; i++) {
+    window.editedLines.add(i + 1);  // Store 1-indexed line numbers
+  }
+  
+  pushToEditor();
+  applyEditHighlighting();
+  toast(`Marked ${sel.endLineNumber - sel.startLineNumber + 1} line(s) as edited`);
+}
+
+function applyEditHighlighting() {
+  if (!rightEditor) return;
+  if (!window.editedLines) window.editedLines = new Set();
+  
+  const decorations = [];
+  const lines = data;
+  
+  lines.forEach((line, idx) => {
+    const lineNum = idx + 1;
+    
+    // Highlight manually edited lines (user marked with 📝 Edit button)
+    if (window.editedLines.has(lineNum)) {
+      decorations.push({
+        range: new monaco.Range(lineNum, 1, lineNum, 1),
+        options: {
+          isWholeLine: true,
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',  // Blue with transparency
+          borderLeft: '3px solid #3b82f6'
+        }
+      });
+    }
+    
+    // Highlight deleted lines in red
+    if (line.startsWith('##DELETED##')) {
+      decorations.push({
+        range: new monaco.Range(lineNum, 1, lineNum, 1),
+        options: {
+          isWholeLine: true,
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',  // Red with transparency
+          textDecoration: 'line-through',
+          borderLeft: '3px solid #ef4444'
+        }
+      });
+    }
+  });
+  
+  if (rightEditor.deltaDecorations) {
+    rightEditor.deltaDecorations([], decorations);
+  }
+}
+
+/* ─── KNOCKDOWN ─── */
+const curbKD = {
+  'L612':0.06,'R612':0.06,
+  'L624':0.12,'R624':0.12,
+  'LPARK':0.06,'RPARK':0.06,
+  'L606':0.03,'R606':0.03,
+  'LD418':0.09,'RD418':0.09,
+  'L618':0.09,'R618':0.09
+};
+
+function getOffsetMap() {
+  const t = document.getElementById('offsetTable').tBodies[0];
+  const map = {};
+  for (let i = 0; i < t.rows.length; i++) {
+    const pt   = t.rows[i].cells[0].innerText.trim();
+    const code = t.rows[i].cells[1].innerText.trim();
+    const v    = parseFloat(t.rows[i].cells[2].innerText);
+    if (pt && code && !isNaN(v)) map[pt] = { code, v };
+  }
+  return map;
+}
+
+function processFBK() {
+  syncFromEditor();
+  const map = getOffsetMap();
+  data = data.map(line => {
+    if (line.startsWith('##DELETE##')) return line;
+    if (!line.includes('F1 VA')) return line;
+    const ptMatch = line.match(/F1 VA (\d+)/);
+    if (!ptMatch) return line;
+    const pt = ptMatch[1];
+    if (!map[pt]) return line;
+    const { code, v } = map[pt];
+    if (!curbDB[code]) return line;
+    let base = curbDB[code];
+    const kd = curbKD[code] || 0;
+    const midV  = (v - 0.012).toFixed(3);
+    const lastV = (v - 0.012 + kd).toFixed(3);
+    base = base.replace('V-0.5', 'V' + midV);
+    base = base.replace(/V-0\.\d+$/, 'V' + lastV);
+    return line.replace(/".*?"/, `"RBCB ${base} RWLK"`);
+  });
+  pushToEditor();
+  toast('Knockdown applied');
+}
+
+/* ─── OFFSET TABLE ─── */
+function addOffsetRow() {
+  const tbody = document.getElementById('offsetTable').tBodies[0];
+  const tr = document.createElement('tr');
+  for (let i = 0; i < 3; i++) {
+    const td = document.createElement('td');
+    td.contentEditable = true;
+    td.spellcheck = false;
+    tr.appendChild(td);
+  }
+  const del = document.createElement('td');
+  del.innerHTML = '<button onclick="this.closest(\'tr\').remove()" style="height:20px;padding:0 6px;font-size:10px;background:var(--danger);border-color:var(--danger);color:#fff;">✕</button>';
+  tr.appendChild(del);
+  tbody.appendChild(tr);
+  tr.cells[0].focus();
+}
+
+function clearOffsetTable() {
+  document.getElementById('offsetTable').tBodies[0].innerHTML = '';
+}
+
+/* ─── STATS ─── */
+function updateStats() {
+  const changed = data.filter((l, i) => l !== originalData[i] && !l.startsWith('##DELETE##')).length;
+  const deleted = data.filter(l => l.startsWith('##DELETE##')).length;
+  document.getElementById('stLines').textContent   = data.length;
+  document.getElementById('stChanged').textContent = changed;
+  document.getElementById('stDeleted').textContent = deleted;
+  document.getElementById('badgeLines').textContent   = data.length + ' lines';
+  document.getElementById('badgeChanged').textContent = changed + ' changed';
+  document.getElementById('badgeDeleted').textContent = deleted + ' deleted';
+}
+
+/* ─── SYNC SCROLL TOGGLE ─── */
+function syncScrollToggle() {
+  syncScroll = !syncScroll;
+  const btn = document.getElementById('syncBtn');
+  btn.textContent = syncScroll ? '🔗 Sync' : '🔓 Free';
+  btn.className = syncScroll ? 'accent' : '';
+  toast('Scroll sync ' + (syncScroll ? 'ON' : 'OFF'));
+}
+
+/* ─── SAVE / LOAD / EXPORT ─── */
+function saveProgress() {
+  syncFromEditor();
+  const blob = new Blob([JSON.stringify({ data, originalData })]);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = loadedBaseName + '.json';
+  a.click();
+  toast('Progress saved');
+}
+
+function loadProgress() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const obj = JSON.parse(ev.target.result);
+      data = obj.data || obj;
+      originalData = obj.originalData || [...data];
+      if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
+      if (rightEditor) rightEditor.setValue(data.join('\n'));
+      updateStats();
+      toast('Progress loaded');
+    };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+function exportTXT() {
+  syncFromEditor();
+  const txt = data.filter(l => !l.startsWith('##DELETED##')).join('\n');
+  const blob = new Blob([txt]);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = loadedBaseName + '-EDITED.fbk';
+  a.click();
+  toast('Exported all lines!');
+}
+
+function exportBlueEdits() {
+  syncFromEditor();
+  
+  if (!window.editedLines || window.editedLines.size === 0) {
+    toast('No blue (edited) lines marked');
+    return;
+  }
+  
+  // Export only the edited lines (blue highlighted)
+  const editedText = [];
+  data.forEach((line, idx) => {
+    const lineNum = idx + 1;
+    if (window.editedLines.has(lineNum) && !line.startsWith('##DELETED##')) {
+      editedText.push(line);
+    }
+  });
+  
+  if (editedText.length === 0) {
+    toast('No valid blue lines to export');
+    return;
+  }
+  
+  const txt = editedText.join('\n');
+  const blob = new Blob([txt]);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'edited_lines.fbk';
+  a.click();
+  
+  toast(`Exported ${editedText.length} edited line(s)!`);
+}
+
+/* ─── TOAST ─── */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  document.getElementById('stMsg').textContent = msg;
+}
+</script>
+</body>
+</html>
