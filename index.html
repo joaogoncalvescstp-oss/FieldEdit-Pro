@@ -341,11 +341,12 @@
 
   <div class="sep"></div>
 
-  <div class="file-btn" title="Load Curb DB CSV">
-    🗂 load Curb DB
+  <button id="btnStdDB" onclick="selectDB('std')" title="Standard Curb DB">📚 STD DB</button>
+  <button id="btnKdDB"  onclick="selectDB('kd')"  title="Knockdown Curb DB">⚡ KD DB</button>
+  <div class="file-btn" title="Load a custom Curb DB file">
+    📂 Custom DB
     <input type="file" id="curbFileInput" accept=".csv,.txt">
   </div>
-  <button onclick="loadCurbDB()">Apply DB</button>
 
   <div class="sep"></div>
 
@@ -683,24 +684,70 @@ document.getElementById('fileInput').addEventListener('change', e => {
 });
 
 /* ─── CURB DB ─── */
-let curbFileReady = false;
-document.getElementById('curbFileInput').addEventListener('change', () => { curbFileReady = true; });
+let curbDBs = { std: {}, kd: {} };
+let activeDB = '';
 
-function loadCurbDB() {
+function parseCurbLines(text) {
+  const db = {};
+  text.split('\n').forEach(line => {
+    const comma = line.indexOf(',');
+    if (comma < 1) return;
+    const key = line.slice(0, comma).trim();
+    const val = line.slice(comma + 1).trim();
+    if (key && val && isNaN(parseFloat(val))) db[key] = val;
+  });
+  return db;
+}
+
+async function autoLoadDBs() {
+  try {
+    const [stdText, kdText] = await Promise.all([
+      fetch('data/std-curb_db.txt').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }),
+      fetch('data/knock-down-curb_db.txt').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    ]);
+    curbDBs.std = parseCurbLines(stdText);
+    curbDBs.kd  = parseCurbLines(kdText);
+    curbDB = { ...curbDBs.std };
+    activeDB = 'std';
+    updateDBButtons();
+    document.getElementById('stCurb').textContent = Object.keys(curbDB).length;
+    toast('DBs loaded — ' + Object.keys(curbDB).length + ' STD types active');
+  } catch (e) {
+    toast('Auto-load failed — use Custom DB button');
+  }
+}
+
+function selectDB(type) {
+  if (!curbDBs[type] || !Object.keys(curbDBs[type]).length) { toast('DB not loaded yet'); return; }
+  curbDB = { ...curbDBs[type] };
+  activeDB = type;
+  updateDBButtons();
+  document.getElementById('stCurb').textContent = Object.keys(curbDB).length;
+  toast((type === 'std' ? 'STD' : 'KD') + ' Curb DB active — ' + Object.keys(curbDB).length + ' types');
+}
+
+function updateDBButtons() {
+  const s = document.getElementById('btnStdDB');
+  const k = document.getElementById('btnKdDB');
+  if (s) s.className = activeDB === 'std' ? 'accent' : '';
+  if (k) k.className = activeDB === 'kd'  ? 'accent' : '';
+}
+
+document.getElementById('curbFileInput').addEventListener('change', () => {
   const file = document.getElementById('curbFileInput').files[0];
-  if (!file) { toast('Select a Curb DB file first'); return; }
+  if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    curbDB = {};
-    ev.target.result.split('\n').forEach(line => {
-      const parts = line.split(',');
-      if (parts.length >= 2) curbDB[parts[0].trim()] = parts[1].trim();
-    });
+    curbDB = parseCurbLines(ev.target.result);
+    activeDB = 'custom';
+    updateDBButtons();
     document.getElementById('stCurb').textContent = Object.keys(curbDB).length;
-    toast('Curb DB: ' + Object.keys(curbDB).length + ' types');
+    toast('Custom DB loaded — ' + Object.keys(curbDB).length + ' types');
   };
   reader.readAsText(file);
-}
+});
+
+autoLoadDBs();
 
 /* ─── SYNC ─── */
 function syncFromEditor() {
