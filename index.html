@@ -1152,7 +1152,8 @@ function applyCurbDB() {
   syncFromEditor();
   data = data.map(l => {
     Object.keys(curbDB).forEach(c => {
-      if (l.includes(c)) l = l.replace(c, curbDB[c]);
+      const re = new RegExp('\\b' + c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+      l = l.replace(re, curbDB[c]);
     });
     return l;
   });
