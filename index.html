@@ -508,9 +508,9 @@ const FBK_THEME = {
     // H/V/CPN codes
     { token: 'variable',   foreground: '67e8f9' },
     // Positional coords on F1/F2 lines
-    { token: 'fbk-c1',     foreground: 'ef4444' },
-    { token: 'fbk-c2',     foreground: 'b91c1c' },
-    { token: 'fbk-c3',     foreground: '67e8f9' },
+    { token: 'fbk.c1',     foreground: 'ef4444' },
+    { token: 'fbk.c2',     foreground: 'b91c1c' },
+    { token: 'fbk.c3',     foreground: '67e8f9' },
   ],
   colors: {
     'editor.background':          '#13161e',
@@ -526,12 +526,23 @@ const FBK_THEME = {
 };
 
 /* ─── FBK LANGUAGE ─── */
+// Recovery rules injected at the TOP of every intermediate state.
+// Monarch states persist across lines, so if a new line starts while we
+// are still in f_rec/f_pt/f_c1/f_c2/f_c3/f_tail the ^ anchor fires at
+// position 0 and routes us back into the correct state or root.
+const _REC = [
+  [/^##DELETE##/,                                                          { token: 'invalid',  next: '@root'  }],
+  [/^\s*[!;#].*$/,                                                         { token: 'comment',  next: '@root'  }],
+  [/^F[12]\b/,                                                             { token: 'keyword',  next: '@f_rec' }],
+  [/^(SS|BK|ST|OF|JB|TR|NE|JR|JL|LT|RT|AZ|BS|FS|RE|GN|AD|MO|ZD|NL|NC|SP|JD|JT|JW|JH|JV|HZ|VA|HD|VD|SL|SR|BL)\b/,
+                                                                           { token: 'keyword',  next: '@root'  }],
+];
+
 const FBK_TOKENS = {
   tokenizer: {
     root: [
       [/##DELETE##/, 'invalid'],
       [/^\s*[!;#].*$/, 'comment'],
-      // F1/F2 lines → enter positional-color state machine
       [/^F[12]\b/, { token: 'keyword', next: '@f_rec' }],
       [/^(SS|BK|ST|OF|JB|TR|NE|JR|JL|LT|RT|AZ|BS|FS|RE|GN|AD|MO|ZD|NL|NC|SP|JD|JT|JW|JH|JV|HZ|VA|HD|VD|SL|SR|BL)\b/, 'keyword'],
       [/\bREF\b/, 'type'],
@@ -542,52 +553,52 @@ const FBK_TOKENS = {
 
     // after F1/F2 — record type (VA, SS, …)
     f_rec: [
+      ..._REC,
       [/[ \t]+/, ''],
       [/(VA|SS|OF|JB|TR|NE|HZ|HD|VD|ZD|SL|SR|BL|BS|FS|RE|GN|AD|MO|NL|NC|SP|JD|JT|JW|JH|JV|AZ|ST|BK|RT|LT)\b/, { token: 'keyword', next: '@f_pt' }],
-      [/$/, { token: '', next: '@root' }],
-      [/./, { token: '', next: '@root' }],
+      [/./, { token: 'keyword', next: '@root' }],
     ],
 
     // point number → yellow
     f_pt: [
+      ..._REC,
       [/[ \t]+/, ''],
       [/\d+/, { token: 'number', next: '@f_c1' }],
-      [/$/, { token: '', next: '@root' }],
-      [/./, { token: '', next: '@root' }],
+      [/./, { token: 'number', next: '@root' }],
     ],
 
     // 1st coordinate (horiz angle) → red
     f_c1: [
+      ..._REC,
       [/[ \t]+/, ''],
-      [/-?\d+(\.\d+)?/, { token: 'fbk-c1', next: '@f_c2' }],
-      [/$/, { token: '', next: '@root' }],
-      [/./, { token: '', next: '@root' }],
+      [/-?\d+(\.\d+)?/, { token: 'fbk.c1', next: '@f_c2' }],
+      [/./, { token: 'fbk.c1', next: '@root' }],
     ],
 
     // 2nd coordinate (vert angle) → darker red
     f_c2: [
+      ..._REC,
       [/[ \t]+/, ''],
-      [/-?\d+(\.\d+)?/, { token: 'fbk-c2', next: '@f_c3' }],
-      [/$/, { token: '', next: '@root' }],
-      [/./, { token: '', next: '@root' }],
+      [/-?\d+(\.\d+)?/, { token: 'fbk.c2', next: '@f_c3' }],
+      [/./, { token: 'fbk.c2', next: '@root' }],
     ],
 
     // 3rd coordinate (distance) → cyan
     f_c3: [
+      ..._REC,
       [/[ \t]+/, ''],
-      [/-?\d+(\.\d+)?/, { token: 'fbk-c3', next: '@f_tail' }],
-      [/$/, { token: '', next: '@root' }],
-      [/./, { token: '', next: '@root' }],
+      [/-?\d+(\.\d+)?/, { token: 'fbk.c3', next: '@f_tail' }],
+      [/./, { token: 'fbk.c3', next: '@root' }],
     ],
 
     // tail of F line: H/V codes, description string, etc.
     f_tail: [
+      ..._REC,
       [/[ \t]+/, ''],
       [/\b(H|V|CPN)[0-9.\-]+/, 'variable'],
       [/"[^"]*"/, 'string'],
       [/\bREF\b/, 'type'],
       [/-?\d+(\.\d+)?/, 'number'],
-      [/$/, { token: '', next: '@root' }],
       [/./, ''],
     ],
   }
