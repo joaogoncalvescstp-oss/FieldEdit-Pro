@@ -366,9 +366,9 @@
   <label>⊞ FBK Pro</label>
   <div class="sep"></div>
 
-  <!-- FILE -->
+  <!-- LOAD -->
   <div class="tb-group">
-    <span class="tb-group-label">File</span>
+    <span class="tb-group-label">Load</span>
     <div class="tb-group-btns">
       <div class="file-btn" title="Open a .fbk / .txt / .fbd field book file">
         📂 Open FBK
@@ -380,9 +380,9 @@
 
   <div class="sep"></div>
 
-  <!-- CURB DATABASE -->
+  <!-- CURB -->
   <div class="tb-group">
-    <span class="tb-group-label">Curb Database</span>
+    <span class="tb-group-label">Curb</span>
     <div class="tb-group-btns">
       <button id="btnStdDB" onclick="selectDB('std')" title="Use the Standard Curb replacement database">📚 Standard</button>
       <button id="btnKdDB"  onclick="selectDB('kd')"  title="Use the Knockdown Curb replacement database">⚡ Knockdown</button>
@@ -390,21 +390,8 @@
         📂 Custom…
         <input type="file" id="curbFileInput" accept=".csv,.txt">
       </div>
-    </div>
-  </div>
-
-  <div class="sep"></div>
-
-  <!-- PROCESSING -->
-  <div class="tb-group">
-    <span class="tb-group-label">Processing</span>
-    <div class="tb-group-btns">
-      <button onclick="removeREF()"       title="Mark all REF lines for deletion">✕ Remove REF</button>
-      <button onclick="fixCodes()"        title="Strip stray spaces inside H / V / CPN codes">🔧 Fix H/V</button>
-      <button onclick="verifyCodePairs()" title="Report linework codes that are missing a B or E marker">✓ Verify B/E</button>
-      <button onclick="fixCodePairs()"    title="Review and selectively apply missing B / E markers" class="accent">⚡ Fix B/E</button>
-      <button onclick="applyCurbDB()"     title="Replace curb codes in the editor using the active Curb DB">↺ Apply Curb</button>
-      <button onclick="processFBK()"      title="Apply knockdown offsets to all matched curb shot points" class="accent">⚙ Knockdown</button>
+      <button onclick="applyCurbDB()" title="Replace curb codes in the editor using the active Curb DB">↺ Apply Curb</button>
+      <button onclick="processFBK()"  title="Apply knockdown offsets to all matched curb shot points" class="accent">⚙ Knockdown</button>
     </div>
   </div>
 
@@ -414,32 +401,36 @@
   <div class="tb-group">
     <span class="tb-group-label">Edit</span>
     <div class="tb-group-btns">
-      <button onclick="markDelete()" class="danger" title="Mark selected lines for deletion (removes on Export)">🗑 Delete</button>
+      <button onclick="removeREF()"       title="Mark all REF lines for deletion">✕ Remove REF</button>
+      <button onclick="fixCodes()"        title="Strip stray spaces inside H / V / CPN codes">🔧 Fix H/V</button>
+      <button onclick="verifyCodePairs()" title="Report linework codes that are missing a B or E marker">✓ Verify B/E</button>
+      <button onclick="fixCodePairs()"    title="Review and selectively apply missing B / E markers" class="accent">⚡ Fix B/E</button>
+      <button onclick="markDelete()" class="danger" title="Mark selected lines for deletion (removed on Export)">🗑 Delete</button>
       <button onclick="markEdit()"   title="Highlight selected lines as manually edited"
               style="background:var(--accent);border-color:var(--accent);color:#fff;">📝 Mark Edit</button>
-    </div>
-  </div>
-
-  <div class="sep"></div>
-
-  <!-- SESSION -->
-  <div class="tb-group">
-    <span class="tb-group-label">Session</span>
-    <div class="tb-group-btns">
-      <button onclick="saveProgress()" class="accent"  title="Save all edits to a JSON session file">💾 Save</button>
-      <button onclick="loadProgress()"                  title="Restore a previously saved session file">📂 Load</button>
-      <button onclick="exportTXT()"    class="success"  title="Export modified file — deleted lines are removed">⬇ Export FBK</button>
-    </div>
-  </div>
-
-  <div class="sep"></div>
-
-  <!-- VIEW -->
-  <div class="tb-group">
-    <span class="tb-group-label">View</span>
-    <div class="tb-group-btns">
       <button onclick="syncScrollToggle()" id="syncBtn" class="accent"
-              title="Toggle synchronized scrolling between Original and Modified panels">🔗 Sync Scroll</button>
+              title="Toggle synchronized scrolling between Original and Modified panels">🔗 Sync</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- EXPORT -->
+  <div class="tb-group">
+    <span class="tb-group-label">Export</span>
+    <div class="tb-group-btns">
+      <button onclick="exportTXT()" class="success" title="Export modified file — deleted lines are removed">⬇ Export FBK</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- SAVE -->
+  <div class="tb-group">
+    <span class="tb-group-label">Save</span>
+    <div class="tb-group-btns">
+      <button onclick="saveProgress()" class="accent" title="Save all edits to a JSON session file">💾 Save Session</button>
+      <button onclick="loadProgress()"               title="Restore a previously saved session file">📂 Load Session</button>
     </div>
   </div>
 </div>
