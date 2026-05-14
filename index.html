@@ -21,7 +21,7 @@
     --text:      #e2e8f0;
     --subtext:   #94a3b8;
     --header-h:  46px;
-    --toolbar-h: 56px;
+    --toolbar-h: 66px;
   }
 
   html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; }
@@ -50,7 +50,16 @@
     white-space: nowrap;
   }
 
-  .sep { width: 1px; height: 28px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+  .sep { width: 1px; height: 38px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+
+  /* toolbar groups */
+  .tb-group { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+  .tb-group-label {
+    font-family: 'Rajdhani', sans-serif; font-size: 8px; color: var(--muted);
+    letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; line-height: 1;
+  }
+  .tb-group-btns { display: flex; align-items: center; gap: 4px; }
+  #toolbar button, #toolbar .file-btn { height: 26px; font-size: 10px; padding: 0 8px; }
 
   .file-btn {
     position: relative;
@@ -357,44 +366,82 @@
   <label>⊞ FBK Pro</label>
   <div class="sep"></div>
 
-  <div class="file-btn" title="Load FBK file">
-    📂 Load FBK
-    <input type="file" id="fileInput" accept=".fbk,.txt,.fbd,.raw">
-  </div>
-  <span id="fbkName">no file</span>
-
-  <div class="sep"></div>
-
-  <button id="btnStdDB" onclick="selectDB('std')" title="Standard Curb DB">📚 STD DB</button>
-  <button id="btnKdDB"  onclick="selectDB('kd')"  title="Knockdown Curb DB">⚡ KD DB</button>
-  <div class="file-btn" title="Load a custom Curb DB file">
-    📂 Custom DB
-    <input type="file" id="curbFileInput" accept=".csv,.txt">
+  <!-- FILE -->
+  <div class="tb-group">
+    <span class="tb-group-label">File</span>
+    <div class="tb-group-btns">
+      <div class="file-btn" title="Open a .fbk / .txt / .fbd field book file">
+        📂 Open FBK
+        <input type="file" id="fileInput" accept=".fbk,.txt,.fbd,.raw">
+      </div>
+      <span id="fbkName">no file</span>
+    </div>
   </div>
 
   <div class="sep"></div>
 
-  <button onclick="removeREF()" title="Mark REF lines for deletion">✕ REF</button>
-  <button onclick="fixCodes()"  title="Strip spaces from H/V/CPN codes">Fix H/V</button>
-  <button onclick="verifyCodePairs()" title="Verify all codes have B and E pairs">✓ Verify B/E</button>
-  <button onclick="fixCodePairs()" title="Auto-add missing B and E markers" class="accent2">⚡ Fix B/E</button>
-  <button onclick="applyCurbDB()">↺ Curb</button>
-  <button onclick="processFBK()" class="accent2">⚙ Knockdown</button>
+  <!-- CURB DATABASE -->
+  <div class="tb-group">
+    <span class="tb-group-label">Curb Database</span>
+    <div class="tb-group-btns">
+      <button id="btnStdDB" onclick="selectDB('std')" title="Use the Standard Curb replacement database">📚 Standard</button>
+      <button id="btnKdDB"  onclick="selectDB('kd')"  title="Use the Knockdown Curb replacement database">⚡ Knockdown</button>
+      <div class="file-btn" title="Load a custom Curb DB .csv / .txt file">
+        📂 Custom…
+        <input type="file" id="curbFileInput" accept=".csv,.txt">
+      </div>
+    </div>
+  </div>
 
   <div class="sep"></div>
 
-  <button onclick="markDelete()" class="danger">🗑 Delete</button>
-  <button onclick="markEdit()" title="Mark selected lines as edited (blue)" style="background: var(--accent); border-color: var(--accent); color: #000;">📝 Edit</button>
+  <!-- PROCESSING -->
+  <div class="tb-group">
+    <span class="tb-group-label">Processing</span>
+    <div class="tb-group-btns">
+      <button onclick="removeREF()"       title="Mark all REF lines for deletion">✕ Remove REF</button>
+      <button onclick="fixCodes()"        title="Strip stray spaces inside H / V / CPN codes">🔧 Fix H/V</button>
+      <button onclick="verifyCodePairs()" title="Report linework codes that are missing a B or E marker">✓ Verify B/E</button>
+      <button onclick="fixCodePairs()"    title="Review and selectively apply missing B / E markers" class="accent">⚡ Fix B/E</button>
+      <button onclick="applyCurbDB()"     title="Replace curb codes in the editor using the active Curb DB">↺ Apply Curb</button>
+      <button onclick="processFBK()"      title="Apply knockdown offsets to all matched curb shot points" class="accent">⚙ Knockdown</button>
+    </div>
+  </div>
 
   <div class="sep"></div>
 
-  <button onclick="saveProgress()" class="accent">💾 Save</button>
-  <button onclick="loadProgress()">📤 Load</button>
-  <button onclick="exportTXT()" class="success">⬇ Export</button>
+  <!-- EDIT -->
+  <div class="tb-group">
+    <span class="tb-group-label">Edit</span>
+    <div class="tb-group-btns">
+      <button onclick="markDelete()" class="danger" title="Mark selected lines for deletion (removes on Export)">🗑 Delete</button>
+      <button onclick="markEdit()"   title="Highlight selected lines as manually edited"
+              style="background:var(--accent);border-color:var(--accent);color:#fff;">📝 Mark Edit</button>
+    </div>
+  </div>
 
   <div class="sep"></div>
 
-  <button onclick="syncScrollToggle()" id="syncBtn" class="accent" title="Toggle synced scrolling">🔗 Sync</button>
+  <!-- SESSION -->
+  <div class="tb-group">
+    <span class="tb-group-label">Session</span>
+    <div class="tb-group-btns">
+      <button onclick="saveProgress()" class="accent"  title="Save all edits to a JSON session file">💾 Save</button>
+      <button onclick="loadProgress()"                  title="Restore a previously saved session file">📂 Load</button>
+      <button onclick="exportTXT()"    class="success"  title="Export modified file — deleted lines are removed">⬇ Export FBK</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- VIEW -->
+  <div class="tb-group">
+    <span class="tb-group-label">View</span>
+    <div class="tb-group-btns">
+      <button onclick="syncScrollToggle()" id="syncBtn" class="accent"
+              title="Toggle synchronized scrolling between Original and Modified panels">🔗 Sync Scroll</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── MAIN ── -->
