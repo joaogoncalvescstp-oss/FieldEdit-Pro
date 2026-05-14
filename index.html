@@ -322,8 +322,14 @@
   }
   .fix-modal-foot {
     padding: 10px 16px; border-top: 1px solid var(--border);
-    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-shrink: 0;
   }
+  .fix-tips {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 3px;
+    font-size: 9px; color: var(--subtext); opacity: 0.75;
+  }
+  .fix-tips li::before { content: '✓ '; color: var(--success); }
 </style>
 </head>
 <body>
@@ -454,8 +460,14 @@
     </div>
     <div id="fixList" class="fix-modal-list"></div>
     <div class="fix-modal-foot">
-      <span style="font-size:10px; color:var(--subtext);">✓ See each fix · Uncheck to skip · Bulk select/deselect</span>
-      <div style="margin-left:auto; display:flex; gap:8px;">
+      <ul class="fix-tips">
+        <li>See each fix before applying</li>
+        <li>Uncheck individual fixes to skip</li>
+        <li>Quick bulk select/deselect with ✓ All · ✕ None</li>
+        <li>Shows code, marker type (B/E), and line number</li>
+        <li>Skip or Apply — your choice</li>
+      </ul>
+      <div style="display:flex; gap:8px; flex-shrink:0; align-self:flex-end;">
         <button onclick="closeFix()" style="height:28px;">Skip All</button>
         <button onclick="applySelectedFixes()" class="accent2" style="height:28px;">⚡ Apply Selected</button>
       </div>
