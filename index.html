@@ -954,7 +954,7 @@ function verifyCodePairs() {
       }
     });
     
-    const hasCLSOnLastLine = lastLineWithCode >= 0 && (data[lastLineWithCode].includes(' CLS') || data[lastLineWithCode].includes('CLS '));
+    const hasCLSOnLastLine = lastLineWithCode >= 0 && (data[lastLineWithCode].includes(' CLS') || data[lastLineWithCode].includes('CLS ') || data[lastLineWithCode].includes(' CIR') || data[lastLineWithCode].includes('CIR '));
     
     if (!hasB && !hasE) {
       issues.push(`⚠ Code "${code}" has NO B or E markers`);
@@ -1016,7 +1016,7 @@ function fixCodePairs() {
       }
 
       if (lineIdx === t.lastLine && !t.hasE && !desc.includes(code + ' E')) {
-        const hasCLS = line.includes(' CLS') || line.includes('CLS ');
+        const hasCLS = line.includes(' CLS') || line.includes('CLS ') || line.includes(' CIR') || line.includes('CIR ');
         if (!hasCLS) {
           const newDesc = desc.replace(new RegExp('\\b' + code + '\\b'), code + ' E');
           pendingFixes.push({ lineIdx, code, markerType: 'E', lineNum: lineIdx + 1,
