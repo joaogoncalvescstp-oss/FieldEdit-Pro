@@ -1541,6 +1541,44 @@ function exportBlueEdits() {
   toast(`Exported ${editedText.length} edited line(s)!`);
 }
 
+/* ─── CLAUDE API UTILS ─── */
+function sanitizeClaudeMessages(messages) {
+  return messages.map(msg => {
+    if (!Array.isArray(msg.content)) return msg;
+    return {
+      ...msg,
+      content: msg.content.map(block => {
+        if (block.type === 'text' && !block.text && block.cache_control) {
+          const { cache_control, ...rest } = block;
+          return rest;
+        }
+        return block;
+      })
+    };
+  });
+}
+
+async function callClaude({ apiKey, system, messages, model = 'claude-sonnet-4-6', maxTokens = 1024 }) {
+  const sanitized = sanitizeClaudeMessages(messages);
+  const body = { model, max_tokens: maxTokens, messages: sanitized };
+  if (system) body.system = system;
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-direct-browser-calls': 'true'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${resp.status}`);
+  }
+  return resp.json();
+}
+
 /* ─── TOAST ─── */
 let toastTimer;
 function toast(msg) {
