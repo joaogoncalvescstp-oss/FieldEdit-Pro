@@ -1,1 +1,217 @@
-<file_content_placeholder/>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Field Book Pro</title>
+<script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #13161e;
+    --panel:     #181b24;
+    --border:    #252a38;
+    --accent:    #3b82f6;
+    --accent2:   #3b82f6;
+    --danger:    #ef4444;
+    --success:   #22c55e;
+    --muted:     #4b5563;
+    --text:      #e2e8f0;
+    --subtext:   #94a3b8;
+    --header-h:  46px;
+    --toolbar-h: 66px;
+  }
+
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; }
+
+  /* ── TOOLBAR ── */
+  #toolbar {
+    height: var(--toolbar-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  #toolbar label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-right: 8px;
+    white-space: nowrap;
+  }
+
+  .sep { width: 1px; height: 38px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+
+  /* toolbar groups */
+  .tb-group { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+  .tb-group-label {
+    font-family: 'Rajdhani', sans-serif; font-size: 8px; color: var(--muted);
+    letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; line-height: 1;
+  }
+  .tb-group-btns { display: flex; align-items: center; gap: 4px; }
+  #toolbar button, #toolbar .file-btn { height: 26px; font-size: 10px; padding: 0 8px; }
+
+  .file-btn {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .file-btn input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+  }
+
+  button, .file-btn {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--panel);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+  button:hover, .file-btn:hover { background: var(--border); border-color: var(--accent); color: #fff; }
+
+  button.accent  { background: var(--accent);  border-color: var(--accent);  color: #fff; }
+  button.accent2 { background: var(--accent2); border-color: var(--accent2); color: #000; }
+  button.danger  { background: var(--danger);  border-color: var(--danger);  color: #fff; }
+  button.success { background: var(--success); border-color: var(--success); color: #000; }
+
+  #fbkName { font-size: 10px; color: var(--subtext); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<!-- ── TOOLBAR ── -->
+<div id="toolbar">
+  <label>⊞ FBK Pro</label>
+  <div class="sep"></div>
+
+  <!-- LOAD -->
+  <div class="tb-group">
+    <span class="tb-group-label">Load</span>
+    <div class="tb-group-btns">
+      <button onclick="openFBKFile()" title="Open a .fbk / .txt / .fbd field book file (remembers original location)">📂 Open FBK</button>
+      <input type="file" id="fileInput" accept=".fbk,.txt,.fbd,.raw" style="display:none;">
+      <span id="fbkName">no file</span>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="tb-group">
+    <span class="tb-group-label">Export</span>
+    <div class="tb-group-btns">
+      <button id="btnSaveOriginal" onclick="saveToOriginalLocation()" class="success" title="Save directly to the original file location (File System Access API)" style="display:none;">💾 Save Original</button>
+      <button onclick="exportTXT()" class="success" title="Export modified file — deleted lines are removed">⬇ Export FBK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let fileHandle = null;
+let data = [];
+let originalData = [];
+let loadedBaseName = 'fieldbook';
+
+async function openFBKFile() {
+  try {
+    if ('showOpenFilePicker' in window) {
+      const handles = await window.showOpenFilePicker({
+        types: [{
+          description: 'Field Book Files',
+          accept: { 'text/plain': ['.fbk', '.txt', '.fbd', '.raw'] }
+        }]
+      });
+      fileHandle = handles[0];
+      const file = await fileHandle.getFile();
+      document.getElementById('fbkName').textContent = file.name + ' ✎';
+      document.getElementById('btnSaveOriginal').style.display = 'block';
+      loadedBaseName = file.name.replace(/\.[^.]+$/, '');
+      const text = await file.text();
+      const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+      originalData = [...lines];
+      data = [...lines];
+      toast('Loaded ' + lines.length + ' lines (original location remembered)');
+    } else {
+      document.getElementById('fileInput').click();
+    }
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      console.error('File picker error:', err);
+      toast('Error opening file');
+    }
+  }
+}
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  fileHandle = null;
+  document.getElementById('fbkName').textContent = file.name;
+  document.getElementById('btnSaveOriginal').style.display = 'none';
+  loadedBaseName = file.name.replace(/\.[^.]+$/, '');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const lines = ev.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    originalData = [...lines];
+    data = [...lines];
+    toast('Loaded ' + lines.length + ' lines');
+  };
+  reader.readAsText(file);
+});
+
+async function saveToOriginalLocation() {
+  if (!fileHandle) {
+    toast('No original file location available. Use Export FBK instead.');
+    return;
+  }
+
+  try {
+    const txt = data.filter(l => !l.startsWith('##DELETED##')).join('\n');
+    const writable = await fileHandle.createWritable();
+    await writable.write(txt);
+    await writable.close();
+    toast('✓ Saved to original location!');
+  } catch (err) {
+    console.error('Save error:', err);
+    if (err.name === 'NotAllowedError') {
+      toast('Permission denied. Use Export FBK instead.');
+    } else {
+      toast('Error saving file: ' + err.message);
+    }
+  }
+}
+
+function exportTXT() {
+  const txt = data.filter(l => !l.startsWith('##DELETED##')).join('\n');
+  const blob = new Blob([txt]);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = loadedBaseName + '-EDITED.fbk';
+  a.click();
+  toast('Exported all lines!');
+}
+
+let toastTimer;
+function toast(msg) {
+  console.log(msg);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {}, 2200);
+}
+</script>
+</body>
+</html>
