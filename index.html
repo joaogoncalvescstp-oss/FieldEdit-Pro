@@ -52,7 +52,6 @@
 
   .sep { width: 1px; height: 38px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
 
-  /* toolbar groups */
   .tb-group { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
   .tb-group-label {
     font-family: 'Rajdhani', sans-serif; font-size: 8px; color: var(--muted);
@@ -92,6 +91,222 @@
   button.success { background: var(--success); border-color: var(--success); color: #000; }
 
   #fbkName { font-size: 10px; color: var(--subtext); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── MAIN LAYOUT ── */
+  #main {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--toolbar-h));
+  }
+
+  #editors {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1px solid var(--border);
+  }
+  .pane:last-child { border-right: none; }
+
+  .pane-header {
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .pane-header .pane-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .pane-title.orig  { color: var(--subtext); }
+  .pane-title.mod   { color: var(--accent);  }
+
+  .badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: var(--border);
+    color: var(--subtext);
+  }
+  .badge.changed { background: #2a2510; color: var(--accent2); }
+  .badge.deleted { background: #1f0e0e; color: var(--danger); }
+
+  .editor-wrap { flex: 1; min-height: 0; }
+
+  /* ── OFFSET TABLE ── */
+  #offsetArea {
+    height: 180px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  /* ── CODE DATABASE ── */
+  #codeArea {
+    height: 200px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  #offsetArea .oa-header, #codeArea .oa-header {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    flex-shrink: 0;
+  }
+  .oa-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: var(--accent2);
+    text-transform: uppercase;
+  }
+
+  #offsetScroll { overflow: auto; flex: 1; padding: 4px 8px; }
+  #codeScroll   { overflow: auto; flex: 1; padding: 4px 8px; }
+
+  #offsetTable {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 11px;
+  }
+  #offsetTable th {
+    background: var(--panel);
+    color: var(--subtext);
+    padding: 4px 8px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  #offsetTable td {
+    padding: 3px 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  #offsetTable td[contenteditable=true] { outline: none; background: transparent; }
+  #offsetTable td[contenteditable=true]:focus { background: #1e2533; box-shadow: inset 0 0 0 1px var(--accent); }
+  #offsetTable tr:hover td { background: #181d2a; }
+
+  #codeTable {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 10px;
+  }
+  #codeTable th {
+    background: var(--panel);
+    color: var(--subtext);
+    padding: 3px 6px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  #codeTable td { padding: 2px 6px; border-bottom: 1px solid var(--border); color: var(--text); }
+  #codeTable tr:hover td { background: #181d2a; }
+  #codeTable td.code-valid   { color: var(--success); }
+  #codeTable td.code-warning { color: var(--accent2); }
+  #codeTable td.code-error   { color: var(--danger);  }
+
+  /* ── STATUS BAR ── */
+  #statusbar {
+    height: 22px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 16px;
+    font-size: 10px;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  #statusbar span { opacity: 0.85; }
+  #statusbar .stat-val { opacity: 1; font-weight: 700; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  #toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--panel); border: 1px solid var(--accent); color: var(--text);
+    padding: 8px 18px; border-radius: 6px; font-size: 12px; z-index: 9999;
+    opacity: 0; transition: opacity 0.25s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ── FIX B/E CONFLICT REVIEW MODAL ── */
+  #fixModal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000;
+    display: none; align-items: center; justify-content: center;
+  }
+  #fixModal.open { display: flex; }
+  .fix-modal-box {
+    background: var(--panel); border: 1px solid var(--accent); border-radius: 8px;
+    width: min(780px, 94vw); max-height: 80vh; display: flex; flex-direction: column;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+  }
+  .fix-modal-head {
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .fix-modal-title { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 15px; color: var(--accent); }
+  .fix-modal-list { overflow-y: auto; flex: 1; }
+  .fix-row { padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .fix-row:hover { background: #181d2a; }
+  .fix-row-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .fix-row input[type=checkbox] { cursor: pointer; accent-color: var(--accent); flex-shrink: 0; width: 14px; height: 14px; }
+  .fix-badge-code { background: var(--accent); color: #fff; padding: 1px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+  .fix-badge-b { background: #1d4ed8; color: #fff; padding: 1px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+  .fix-badge-e { background: var(--success); color: #000; padding: 1px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+  .fix-issue   { font-size: 10px; color: var(--danger); font-weight: 600; }
+  .fix-line-num { font-size: 10px; color: var(--subtext); margin-left: auto; white-space: nowrap; }
+  .fix-diff { padding-left: 22px; display: flex; flex-direction: column; gap: 3px; }
+  .fix-diff-row { display: flex; align-items: baseline; gap: 8px; font-size: 10px; }
+  .diff-label { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; min-width: 46px; flex-shrink: 0; }
+  .diff-label.before { color: var(--danger); }
+  .diff-label.after  { color: var(--success); }
+  .diff-code { font-family: 'JetBrains Mono', monospace; color: var(--subtext); background: var(--bg); padding: 2px 6px; border-radius: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .diff-code.after-code { color: var(--text); }
+  .diff-hl { background: rgba(34,197,94,0.18); color: var(--success); border-radius: 2px; padding: 0 1px; }
+  .fix-modal-foot { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-shrink: 0; }
+  .fix-tips { list-style: none; display: flex; flex-direction: column; gap: 2px; font-size: 9px; color: var(--subtext); opacity: 0.7; }
+  .fix-tips li::before { content: '✓ '; color: var(--success); }
 </style>
 </head>
 <body>
@@ -105,36 +320,372 @@
   <div class="tb-group">
     <span class="tb-group-label">Load</span>
     <div class="tb-group-btns">
-      <button onclick="openFBKFile()" title="Open a .fbk / .txt / .fbd field book file (remembers original location)">📂 Open FBK</button>
+      <button onclick="openFBKFile()" title="Open a .fbk / .txt / .fbd field book file">📂 Open FBK</button>
       <input type="file" id="fileInput" accept=".fbk,.txt,.fbd,.raw" style="display:none;">
       <span id="fbkName">no file</span>
     </div>
   </div>
 
+  <div class="sep"></div>
+
+  <!-- CURB -->
+  <div class="tb-group">
+    <span class="tb-group-label">Curb</span>
+    <div class="tb-group-btns">
+      <button id="btnStdDB" onclick="selectDB('std')" title="Use the Standard Curb replacement database">📚 Standard</button>
+      <button id="btnKdDB"  onclick="selectDB('kd')"  title="Use the Knockdown Curb replacement database">⚡ Knockdown</button>
+      <div class="file-btn" title="Load a custom Curb DB .csv / .txt file">
+        📂 Custom…
+        <input type="file" id="curbFileInput" accept=".csv,.txt">
+      </div>
+      <button onclick="applyCurbDB()" title="Replace curb codes in the editor using the active Curb DB">↺ Apply Curb</button>
+      <button onclick="processFBK()"  title="Apply knockdown offsets to all matched curb shot points" class="accent">⚙ Knockdown</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- EDIT -->
+  <div class="tb-group">
+    <span class="tb-group-label">Edit</span>
+    <div class="tb-group-btns">
+      <button onclick="removeREF()"       title="Mark all REF lines for deletion">✕ Remove REF</button>
+      <button onclick="fixCodes()"        title="Strip stray spaces inside H / V / CPN codes">🔧 Fix H/V</button>
+      <button onclick="verifyCodePairs()" title="Report linework codes that are missing a B or E marker">✓ Verify B/E</button>
+      <button onclick="fixCodePairs()"    title="Review and selectively apply missing B / E markers" class="accent">⚡ Fix B/E</button>
+      <button onclick="markDelete()" class="danger" title="Mark selected lines for deletion (removed on Export)">🗑 Delete</button>
+      <button onclick="markEdit()"   title="Highlight selected lines as manually edited"
+              style="background:var(--accent);border-color:var(--accent);color:#fff;">📝 Mark Edit</button>
+      <button onclick="syncScrollToggle()" id="syncBtn" class="accent"
+              title="Toggle synchronized scrolling between Original and Modified panels">🔗 Sync</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
   <!-- EXPORT -->
   <div class="tb-group">
     <span class="tb-group-label">Export</span>
     <div class="tb-group-btns">
-      <button id="btnSaveOriginal" onclick="saveToOriginalLocation()" class="success" title="Save directly to the original file location (File System Access API)" style="display:none;">💾 Save Original</button>
+      <button id="btnSaveOriginal" onclick="saveToOriginalLocation()" class="success" title="Save directly to the original file location (Chrome/Edge only)" style="display:none;">💾 Save Original</button>
       <button onclick="exportTXT()" class="success" title="Export modified file — deleted lines are removed">⬇ Export FBK</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- SAVE -->
+  <div class="tb-group">
+    <span class="tb-group-label">Save</span>
+    <div class="tb-group-btns">
+      <button onclick="saveProgress()" class="accent" title="Save all edits to a JSON session file">💾 Save Session</button>
+      <button onclick="loadProgress()"               title="Restore a previously saved session file">📂 Load Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div id="main">
+  <div id="editors">
+
+    <!-- LEFT: Original read-only -->
+    <div class="pane">
+      <div class="pane-header">
+        <span class="pane-title orig">Original</span>
+        <span class="badge" id="badgeLines">0 lines</span>
+        <span class="badge changed" id="badgeChanged">0 changed</span>
+        <span class="badge deleted" id="badgeDeleted">0 deleted</span>
+      </div>
+      <div class="editor-wrap" id="leftEditor"></div>
+    </div>
+
+    <!-- RIGHT: Modified editable -->
+    <div class="pane">
+      <div class="pane-header">
+        <span class="pane-title mod">Modified</span>
+        <span style="font-size:10px; color:var(--subtext); margin-left:auto;">ctrl+z = undo · ctrl+/ = comment</span>
+      </div>
+      <div class="editor-wrap" id="rightEditor"></div>
+    </div>
+
+  </div>
+
+  <!-- ── OFFSET TABLE ── -->
+  <div id="offsetArea">
+    <div class="oa-header">
+      <span class="oa-title">📐 Knockdown Table</span>
+      <button onclick="addOffsetRow()" style="height:24px; font-size:11px;">➕ Row</button>
+      <button onclick="clearOffsetTable()" style="height:24px; font-size:11px;">🗑 Clear</button>
+    </div>
+    <div id="offsetScroll">
+      <table id="offsetTable">
+        <thead><tr><th>Point #</th><th>Code</th><th>V Offset</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── CODE DATABASE ── -->
+  <div id="codeArea">
+    <div class="oa-header">
+      <span class="oa-title">📚 CODE DATABASE</span>
+      <button onclick="extractCodesToDatabase()" style="height:24px; font-size:11px; background:var(--accent2); border-color:var(--accent2); color:#000;">⟳ Extract</button>
+      <button onclick="clearCodeDatabase()" style="height:24px; font-size:11px; background:var(--danger); border-color:var(--danger); color:#fff;">🗑 Clear</button>
+    </div>
+    <div id="codeScroll">
+      <table id="codeTable">
+        <thead><tr><th>Base Code</th><th>Variants</th><th>Count</th><th>First</th><th>Last</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── STATUS BAR ── -->
+  <div id="statusbar">
+    <span>LINES <span class="stat-val" id="stLines">0</span></span>
+    <span>CHANGED <span class="stat-val" id="stChanged">0</span></span>
+    <span>DELETED <span class="stat-val" id="stDeleted">0</span></span>
+    <span>CURB DB <span class="stat-val" id="stCurb">—</span></span>
+    <span id="stMsg" style="margin-left:auto;"></span>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ── FIX B/E CONFLICT REVIEW ── -->
+<div id="fixModal">
+  <div class="fix-modal-box">
+    <div class="fix-modal-head">
+      <span class="fix-modal-title">🔍 B/E Conflict Review</span>
+      <span id="fixCount" style="font-size:11px; color:var(--subtext);"></span>
+      <div style="margin-left:auto; display:flex; gap:6px;">
+        <button onclick="fixModalSelectAll(true)"  style="height:24px; font-size:10px; padding:0 8px;">✓ All</button>
+        <button onclick="fixModalSelectAll(false)" style="height:24px; font-size:10px; padding:0 8px;">✕ None</button>
+      </div>
+    </div>
+    <div id="fixList" class="fix-modal-list"></div>
+    <div class="fix-modal-foot">
+      <ul class="fix-tips">
+        <li>See each fix before applying</li>
+        <li>Uncheck individual fixes to skip</li>
+        <li>Quick bulk select/deselect</li>
+        <li>Shows code, marker type (B/E), and line number</li>
+        <li>Skip or Apply - your choice</li>
+      </ul>
+      <div style="display:flex; gap:8px; flex-shrink:0;">
+        <button onclick="closeFix()" style="height:28px;">Skip All</button>
+        <button onclick="applySelectedFixes()" class="accent" style="height:28px;">⚡ Apply Selected</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-let fileHandle = null;
-let data = [];
-let originalData = [];
-let loadedBaseName = 'fieldbook';
+require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } });
 
+let leftEditor, rightEditor;
+let loadedBaseName = 'fieldbook';
+let originalData = [];
+let data = [];
+let curbDB = {};
+let syncScroll = true;
+let scrollingLeft = false, scrollingRight = false;
+let pendingFixes = [];
+let fileHandle = null;
+
+const LINEWORK_CODES = new Set([
+  'UTEL','UPP','UGAS','UFO','UEL','UCATV','TWE','TTW','TRL','TPLTR',
+  'TOP','TOE','TMS','TGDN','TGB','TFNC','TBW','TBSH','RWLK','RWCL',
+  'RWBK','RTW','RTOC','RTILE','RSTP','RRTC','RR','RPCL','RMONO','RLTC',
+  'RJNT','RGTC','RGR','RGED','RGCL','REP','RDRG','RDRC','RDRB','RDRA',
+  'RCFL','RCED','RCCL','RBTC','RBRK','RBIT','RBCL','RBCB','RAMP','OWW',
+  'OSET','ORIP','ORBR','OPRP','OPIR','OPIL','OMDL','OGRD','OFTG','OEXP',
+  'OCOL','OCBL','OCAP','OBRG','OBEM','OBDR','OBDK','OARC','OAPS','OAPR',
+  'OABT','MISCL','BLD','BHR','BGCR','BDEC','BCAN'
+]);
+
+const FBK_THEME = {
+  base: 'vs-dark', inherit: true,
+  rules: [
+    { token: 'keyword',  foreground: 'f59e0b', fontStyle: 'bold' },
+    { token: 'number',   foreground: '3b82f6' },
+    { token: 'string',   foreground: '22c55e' },
+    { token: 'constant', foreground: 'a78bfa' },
+    { token: 'type',     foreground: 'fb923c', fontStyle: 'italic' },
+    { token: 'invalid',  foreground: 'ef4444', fontStyle: 'bold' },
+    { token: 'comment',  foreground: '4b5563', fontStyle: 'italic' },
+    { token: 'variable', foreground: '67e8f9' },
+    { token: 'fbk.c1',  foreground: 'ef4444' },
+    { token: 'fbk.c2',  foreground: 'b91c1c' },
+    { token: 'fbk.c3',  foreground: '67e8f9' },
+  ],
+  colors: {
+    'editor.background': '#13161e', 'editor.foreground': '#e2e8f0',
+    'editor.lineHighlightBackground': '#1e2533',
+    'editorLineNumber.foreground': '#374151',
+    'editorLineNumber.activeForeground': '#60a5fa',
+    'editorCursor.foreground': '#001d3f',
+    'editor.selectionBackground': '#1d4ed8aa',
+    'editorWidget.background': '#181b24',
+    'editorSuggestWidget.background': '#181b24',
+  }
+};
+
+const _REC = [
+  [/^##DELETE##/,  { token: 'invalid', next: '@root' }],
+  [/^\s*[!;#].*$/, { token: 'comment', next: '@root' }],
+  [/^F[12]\b/,     { token: 'keyword', next: '@f_rec' }],
+  [/^(SS|BK|ST|OF|JB|TR|NE|JR|JL|LT|RT|AZ|BS|FS|RE|GN|AD|MO|ZD|NL|NC|SP|JD|JT|JW|JH|JV|HZ|VA|HD|VD|SL|SR|BL)\b/, { token: 'keyword', next: '@root' }],
+];
+
+const FBK_TOKENS = {
+  tokenizer: {
+    root: [
+      [/##DELETE##/, 'invalid'],
+      [/^\s*[!;#].*$/, 'comment'],
+      [/^F[12]\b/, { token: 'keyword', next: '@f_rec' }],
+      [/^(SS|BK|ST|OF|JB|TR|NE|JR|JL|LT|RT|AZ|BS|FS|RE|GN|AD|MO|ZD|NL|NC|SP|JD|JT|JW|JH|JV|HZ|VA|HD|VD|SL|SR|BL)\b/, 'keyword'],
+      [/\bREF\b/, 'type'],
+      [/\b(H|V|CPN)[0-9.\-]+/, 'variable'],
+      [/"[^"]*"/, 'string'],
+      [/\b\d+(\.\d+)?\b/, 'number'],
+    ],
+    f_rec: [
+      ..._REC,
+      [/[ \t]+/, ''],
+      [/(VA|SS|OF|JB|TR|NE|HZ|HD|VD|ZD|SL|SR|BL|BS|FS|RE|GN|AD|MO|NL|NC|SP|JD|JT|JW|JH|JV|AZ|ST|BK|RT|LT)\b/, { token: 'keyword', next: '@f_pt' }],
+      [/./, { token: 'keyword', next: '@root' }],
+    ],
+    f_pt: [
+      ..._REC,
+      [/[ \t]+/, ''],
+      [/\d+/, { token: 'number', next: '@f_c1' }],
+      [/./, { token: 'number', next: '@root' }],
+    ],
+    f_c1: [
+      ..._REC,
+      [/[ \t]+/, ''],
+      [/-?\d+(\.\d+)?/, { token: 'fbk.c1', next: '@f_c2' }],
+      [/./, { token: 'fbk.c1', next: '@root' }],
+    ],
+    f_c2: [
+      ..._REC,
+      [/[ \t]+/, ''],
+      [/-?\d+(\.\d+)?/, { token: 'fbk.c2', next: '@f_c3' }],
+      [/./, { token: 'fbk.c2', next: '@root' }],
+    ],
+    f_c3: [
+      ..._REC,
+      [/[ \t]+/, ''],
+      [/-?\d+(\.\d+)?/, { token: 'fbk.c3', next: '@f_tail' }],
+      [/./, { token: 'fbk.c3', next: '@root' }],
+    ],
+    f_tail: [
+      ..._REC,
+      [/[ \t]+/, ''],
+      [/\b(H|V|CPN)[0-9.\-]+/, 'variable'],
+      [/"[^"]*"/, 'string'],
+      [/\bREF\b/, 'type'],
+      [/-?\d+(\.\d+)?/, 'number'],
+      [/./, ''],
+    ],
+  }
+};
+
+require(['vs/editor/editor.main'], function () {
+  monaco.languages.register({ id: 'fbk' });
+  monaco.languages.setMonarchTokensProvider('fbk', FBK_TOKENS);
+  monaco.editor.defineTheme('fbk-dark', FBK_THEME);
+
+  const common = {
+    language: 'fbk', theme: 'fbk-dark', automaticLayout: true,
+    fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: 18,
+    minimap: { enabled: true, renderCharacters: false },
+    scrollbar: { vertical: 'visible', horizontal: 'visible', verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+    renderLineHighlight: 'all', roundedSelection: false, renderWhitespace: 'none',
+    glyphMargin: false, folding: false, lineDecorationsWidth: 4, scrollBeyondLastLine: false,
+  };
+
+  leftEditor = monaco.editor.create(document.getElementById('leftEditor'), {
+    ...common, value: '', readOnly: true, lineNumbers: 'on', contextmenu: false,
+  });
+
+  rightEditor = monaco.editor.create(document.getElementById('rightEditor'), {
+    ...common, value: '', readOnly: false, lineNumbers: 'on',
+  });
+
+  leftEditor.onDidScrollChange(() => {
+    if (!syncScroll || scrollingRight) return;
+    scrollingLeft = true;
+    rightEditor.setScrollTop(leftEditor.getScrollTop());
+    rightEditor.setScrollLeft(leftEditor.getScrollLeft());
+    scrollingLeft = false;
+  });
+
+  rightEditor.onDidScrollChange(() => {
+    if (!syncScroll || scrollingLeft) return;
+    scrollingRight = true;
+    leftEditor.setScrollTop(rightEditor.getScrollTop());
+    leftEditor.setScrollLeft(rightEditor.getScrollLeft());
+    scrollingRight = false;
+  });
+
+  rightEditor.onDidChangeModelContent(() => {
+    syncFromEditor();
+    updateStats();
+    decorateLeft();
+  });
+});
+
+let leftDecorations = [], rightDecorations = [];
+
+function decorateLeft() {
+  if (!leftEditor) return;
+  if (!document.getElementById('deco-style')) {
+    const s = document.createElement('style');
+    s.id = 'deco-style';
+    s.textContent = `
+      .line-changed { background: #0d1f3c80 !important; border-left: 3px solid #3b82f6; }
+      .line-deleted { background: #1f0e0e80 !important; border-left: 3px solid #ef4444; }
+      .line-changed-right { background: #0d1f3c60 !important; border-left: 3px solid #3b82f6; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  const leftDeco = [], rightDeco = [];
+  data.forEach((line, i) => {
+    if (line === originalData[i]) return;
+    const isDeleted = line.startsWith('##DELETE##') || line.startsWith('##DELETED##');
+    leftDeco.push({
+      range: new monaco.Range(i + 1, 1, i + 1, 1),
+      options: {
+        isWholeLine: true,
+        className: isDeleted ? 'line-deleted' : 'line-changed',
+        overviewRulerColor: isDeleted ? '#ef444488' : '#3b82f688',
+        overviewRulerLane: monaco.editor.OverviewRulerLane.Left,
+      }
+    });
+    if (!isDeleted) {
+      rightDeco.push({
+        range: new monaco.Range(i + 1, 1, i + 1, 1),
+        options: {
+          isWholeLine: true, className: 'line-changed-right',
+          overviewRulerColor: '#3b82f688',
+          overviewRulerLane: monaco.editor.OverviewRulerLane.Right,
+        }
+      });
+    }
+  });
+  leftDecorations  = leftEditor.deltaDecorations(leftDecorations, leftDeco);
+  if (rightEditor) rightDecorations = rightEditor.deltaDecorations(rightDecorations, rightDeco);
+}
+
+/* ─── FILE LOAD ─── */
 async function openFBKFile() {
   try {
     if ('showOpenFilePicker' in window) {
       const handles = await window.showOpenFilePicker({
-        types: [{
-          description: 'Field Book Files',
-          accept: { 'text/plain': ['.fbk', '.txt', '.fbd', '.raw'] }
-        }]
+        types: [{ description: 'Field Book Files', accept: { 'text/plain': ['.fbk','.txt','.fbd','.raw'] } }]
       });
       fileHandle = handles[0];
       const file = await fileHandle.getFile();
@@ -143,17 +694,16 @@ async function openFBKFile() {
       loadedBaseName = file.name.replace(/\.[^.]+$/, '');
       const text = await file.text();
       const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-      originalData = [...lines];
-      data = [...lines];
+      originalData = [...lines]; data = [...lines];
+      if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
+      if (rightEditor) rightEditor.setValue(data.join('\n'));
+      updateStats();
       toast('Loaded ' + lines.length + ' lines (original location remembered)');
     } else {
       document.getElementById('fileInput').click();
     }
   } catch (err) {
-    if (err.name !== 'AbortError') {
-      console.error('File picker error:', err);
-      toast('Error opening file');
-    }
+    if (err.name !== 'AbortError') toast('Error opening file');
   }
 }
 
@@ -167,50 +717,488 @@ document.getElementById('fileInput').addEventListener('change', e => {
   const reader = new FileReader();
   reader.onload = ev => {
     const lines = ev.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-    originalData = [...lines];
-    data = [...lines];
+    originalData = [...lines]; data = [...lines];
+    if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
+    if (rightEditor) rightEditor.setValue(data.join('\n'));
+    updateStats();
     toast('Loaded ' + lines.length + ' lines');
   };
   reader.readAsText(file);
 });
 
-async function saveToOriginalLocation() {
-  if (!fileHandle) {
-    toast('No original file location available. Use Export FBK instead.');
-    return;
-  }
+/* ─── CURB DB ─── */
+let curbDBs = { std: {}, kd: {} };
+let activeDB = '';
 
+function parseCurbLines(text) {
+  const db = {};
+  text.split('\n').forEach(line => {
+    const comma = line.indexOf(',');
+    if (comma < 1) return;
+    const key = line.slice(0, comma).trim();
+    const val = line.slice(comma + 1).trim();
+    if (key && val && isNaN(parseFloat(val))) db[key] = val;
+  });
+  return db;
+}
+
+async function autoLoadDBs() {
   try {
-    const txt = data.filter(l => !l.startsWith('##DELETED##')).join('\n');
-    const writable = await fileHandle.createWritable();
+    const [stdText, kdText] = await Promise.all([
+      fetch('data/std-curb_db.txt').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }),
+      fetch('data/knock-down-curb_db.txt').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    ]);
+    curbDBs.std = parseCurbLines(stdText);
+    curbDBs.kd  = parseCurbLines(kdText);
+    curbDB = { ...curbDBs.std };
+    activeDB = 'std';
+    updateDBButtons();
+    document.getElementById('stCurb').textContent = Object.keys(curbDB).length;
+    toast('DBs loaded — ' + Object.keys(curbDB).length + ' STD types active');
+  } catch (e) {
+    toast('Auto-load failed — use Custom DB button');
+  }
+}
+
+function selectDB(type) {
+  if (!curbDBs[type] || !Object.keys(curbDBs[type]).length) { toast('DB not loaded yet'); return; }
+  curbDB = { ...curbDBs[type] };
+  activeDB = type;
+  updateDBButtons();
+  document.getElementById('stCurb').textContent = Object.keys(curbDB).length;
+  toast((type === 'std' ? 'STD' : 'KD') + ' Curb DB active — ' + Object.keys(curbDB).length + ' types');
+}
+
+function updateDBButtons() {
+  const s = document.getElementById('btnStdDB');
+  const k = document.getElementById('btnKdDB');
+  if (s) s.className = activeDB === 'std' ? 'accent' : '';
+  if (k) k.className = activeDB === 'kd'  ? 'accent' : '';
+}
+
+document.getElementById('curbFileInput').addEventListener('change', () => {
+  const file = document.getElementById('curbFileInput').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    curbDB = parseCurbLines(ev.target.result);
+    activeDB = 'custom';
+    updateDBButtons();
+    document.getElementById('stCurb').textContent = Object.keys(curbDB).length;
+    toast('Custom DB loaded — ' + Object.keys(curbDB).length + ' types');
+  };
+  reader.readAsText(file);
+});
+
+autoLoadDBs();
+
+/* ─── SYNC ─── */
+function syncFromEditor() {
+  if (rightEditor) data = rightEditor.getValue().split('\n');
+}
+
+function pushToEditor() {
+  if (rightEditor) { rightEditor.setValue(data.join('\n')); applyEditHighlighting(); }
+  if (leftEditor && window.toolModifiedLines) applyLeftPanelHighlighting();
+}
+
+function applyLeftPanelHighlighting() {
+  if (!leftEditor || !window.toolModifiedLines) return;
+  const decorations = [];
+  window.toolModifiedLines.forEach(lineNum => {
+    decorations.push({ range: new monaco.Range(lineNum, 1, lineNum, 1), options: { isWholeLine: true, backgroundColor: 'rgba(59,130,246,0.2)', borderLeft: '3px solid #3b82f6' } });
+  });
+  if (leftEditor.deltaDecorations) leftEditor.deltaDecorations([], decorations);
+}
+
+/* ─── TOOLS ─── */
+function removeREF() {
+  syncFromEditor();
+  const now = new Date();
+  const timestamp = `Deleted ${now.toLocaleTimeString('en-US')} ${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`;
+  data = data.map(l => l.includes('REF') ? '##DELETED## ' + timestamp + ' | ' + l : l);
+  pushToEditor();
+  toast('REF lines marked for deletion');
+}
+
+function fixCodes() {
+  syncFromEditor();
+  data = data.map(l => l.replace(/H\s+/g,'H').replace(/V\s+/g,'V').replace(/CPN\s+/g,'CPN'));
+  pushToEditor();
+  toast('H/V/CPN codes fixed');
+}
+
+function verifyCodePairs() {
+  syncFromEditor();
+  const codePattern = /^F[12] VA \d+.*"([^"]*)"$/;
+  const allCodes = new Set();
+  const issues = [];
+  data.forEach(line => {
+    const match = line.match(codePattern);
+    if (!match) return;
+    LINEWORK_CODES.forEach(code => { if (match[1].includes(code)) allCodes.add(code); });
+  });
+  allCodes.forEach(code => {
+    let hasB = false, hasE = false, firstB = -1, lastE = -1;
+    data.forEach((line, idx) => {
+      const match = line.match(codePattern);
+      if (!match || !match[1].includes(code)) return;
+      if (match[1].includes(code+' B') || new RegExp(code+'\\s+B\\b').test(match[1])) { hasB = true; if (firstB===-1) firstB=idx; }
+      if (match[1].includes(code+' E') || new RegExp(code+'\\s+E\\b').test(match[1])) { hasE = true; lastE=idx; }
+    });
+    let lastLineWithCode = -1;
+    data.forEach((line, idx) => { const m=line.match(codePattern); if (m && m[1].includes(code)) lastLineWithCode=idx; });
+    const hasCLS = lastLineWithCode>=0 && (data[lastLineWithCode].includes(' CLS')||data[lastLineWithCode].includes('CLS ')||data[lastLineWithCode].includes(' CIR')||data[lastLineWithCode].includes('CIR '));
+    if (!hasB && !hasE)  issues.push(`⚠ Code "${code}" has NO B or E markers`);
+    else if (hasB && !hasE && !hasCLS) issues.push(`⚠ Code "${code}" has B but NO E (last B at line ${firstB+1})`);
+    else if (!hasB && hasE) issues.push(`⚠ Code "${code}" has E but NO B (last E at line ${lastE+1})`);
+  });
+  if (issues.length === 0) toast('✓ All linework codes have valid B/E pairs!');
+  else { toast(`Found ${issues.length} linework code issues:`); alert('LINEWORK CODE VERIFICATION REPORT\n\n' + issues.slice(0,20).join('\n') + (issues.length>20 ? `\n\n... and ${issues.length-20} more` : '')); }
+}
+
+function fixCodePairs() {
+  syncFromEditor();
+  const codePattern    = /^F[12] VA (\d+).*"([^"]*)"$/;
+  const codePatternFix = /^(F[12] VA \d+.*)"([^"]*)"(.*)$/;
+  const codeTracking = {};
+  data.forEach((line, lineIdx) => {
+    const match = line.match(codePattern);
+    if (!match) return;
+    const desc = match[2];
+    LINEWORK_CODES.forEach(code => {
+      if (!desc.includes(code)) return;
+      if (!codeTracking[code]) codeTracking[code] = { firstLine: lineIdx, lastLine: lineIdx, hasB: false, hasE: false };
+      codeTracking[code].lastLine = lineIdx;
+      if (desc.includes(code+' B') || new RegExp(code+'\\s+B\\b').test(desc)) codeTracking[code].hasB = true;
+      if (desc.includes(code+' E') || new RegExp(code+'\\s+E\\b').test(desc)) codeTracking[code].hasE = true;
+    });
+  });
+  pendingFixes = [];
+  data.forEach((line, lineIdx) => {
+    const match = line.match(codePatternFix);
+    if (!match) return;
+    const prefix = match[1], desc = match[2], suffix = match[3];
+    Object.keys(codeTracking).forEach(code => {
+      const t = codeTracking[code];
+      if (lineIdx === t.firstLine && !t.hasB && !desc.includes(code+' B')) {
+        const newDesc = desc.replace(new RegExp('\\b'+code+'\\b'), code+' B');
+        pendingFixes.push({ lineIdx, code, markerType:'B', lineNum:lineIdx+1, newLine:prefix+'"'+newDesc+'"'+suffix, newDesc, origDesc:desc });
+      }
+      if (lineIdx === t.lastLine && !t.hasE && !desc.includes(code+' E')) {
+        const hasCLS = line.includes(' CLS')||line.includes('CLS ')||line.includes(' CIR')||line.includes('CIR ');
+        if (!hasCLS) {
+          const newDesc = desc.replace(new RegExp('\\b'+code+'\\b'), code+' E');
+          pendingFixes.push({ lineIdx, code, markerType:'E', lineNum:lineIdx+1, newLine:prefix+'"'+newDesc+'"'+suffix, newDesc, origDesc:desc });
+        }
+      }
+    });
+  });
+  if (pendingFixes.length === 0) { toast('✓ No fixes needed - all codes already valid!'); return; }
+  showFixModal();
+}
+
+function _esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function showFixModal() {
+  document.getElementById('fixCount').textContent = pendingFixes.length + ' conflict' + (pendingFixes.length!==1?'s':'') + ' found';
+  const list = document.getElementById('fixList');
+  list.innerHTML = '';
+  pendingFixes.forEach((fix, i) => {
+    const afterHtml = _esc(fix.newDesc).replace(new RegExp('('+_esc(fix.code)+'\\s+'+fix.markerType+')'),'<span class="diff-hl">$1</span>');
+    const row = document.createElement('div');
+    row.className = 'fix-row';
+    row.innerHTML = `
+      <div class="fix-row-top">
+        <input type="checkbox" checked id="fix_${i}">
+        <span class="fix-badge-code">${_esc(fix.code)}</span>
+        <span class="${fix.markerType==='B'?'fix-badge-b':'fix-badge-e'}">${fix.markerType}</span>
+        <span class="fix-issue">missing ${fix.markerType} marker</span>
+        <span class="fix-line-num">Line ${fix.lineNum}</span>
+      </div>
+      <div class="fix-diff">
+        <div class="fix-diff-row"><span class="diff-label before">Before</span><span class="diff-code">"${_esc(fix.origDesc)}"</span></div>
+        <div class="fix-diff-row"><span class="diff-label after">After</span><span class="diff-code after-code">"${afterHtml}"</span></div>
+      </div>`;
+    row.addEventListener('click', e => { if (e.target.type!=='checkbox') document.getElementById('fix_'+i).checked=!document.getElementById('fix_'+i).checked; });
+    list.appendChild(row);
+  });
+  document.getElementById('fixModal').classList.add('open');
+}
+
+function fixModalSelectAll(state) { pendingFixes.forEach((_,i) => { const cb=document.getElementById('fix_'+i); if(cb) cb.checked=state; }); }
+
+function closeFix() { document.getElementById('fixModal').classList.remove('open'); pendingFixes=[]; toast('Fixes skipped'); }
+
+function applySelectedFixes() {
+  const selected = pendingFixes.filter((_,i) => { const cb=document.getElementById('fix_'+i); return cb&&cb.checked; });
+  document.getElementById('fixModal').classList.remove('open');
+  pendingFixes = [];
+  if (selected.length===0) { toast('No fixes selected'); return; }
+  const byLine = {};
+  selected.forEach(fix => { if(!byLine[fix.lineIdx]) byLine[fix.lineIdx]=[]; byLine[fix.lineIdx].push(fix); });
+  const codePatternFix = /^(F[12] VA \d+.*)"([^"]*)"(.*)$/;
+  const modifiedLineIndices = new Set();
+  data = data.map((line, lineIdx) => {
+    if (!byLine[lineIdx]) return line;
+    const match = line.match(codePatternFix);
+    if (!match) return line;
+    const prefix=match[1], suffix=match[3];
+    let desc=match[2];
+    byLine[lineIdx].forEach(fix => { desc=desc.replace(new RegExp('\\b'+fix.code+'\\b'),fix.code+' '+fix.markerType); });
+    modifiedLineIndices.add(lineIdx);
+    return prefix+'"'+desc+'"'+suffix;
+  });
+  if (!window.toolModifiedLines) window.toolModifiedLines=new Set();
+  modifiedLineIndices.forEach(idx => window.toolModifiedLines.add(idx+1));
+  pushToEditor(); updateStats();
+  toast(`⚡ Applied ${selected.length} fix(es) across ${modifiedLineIndices.size} line(s)`);
+}
+
+function extractCodesToDatabase() {
+  syncFromEditor();
+  const codePattern = /^F[12] VA (\d+).*"([^"]*)"$/;
+  const codeMap = {};
+  data.forEach((line, lineIdx) => {
+    const match = line.match(codePattern);
+    if (!match) return;
+    const desc = match[2];
+    LINEWORK_CODES.forEach(baseCode => {
+      const regex = new RegExp('\\b('+baseCode+'\\d?)\\b');
+      const matches = desc.match(regex);
+      if (!matches) return;
+      const codeWithVariant = matches[1];
+      if (!codeMap[baseCode]) codeMap[baseCode] = { variants:new Set(), count:0, firstLine:lineIdx+1, lastLine:lineIdx+1, hasB:false, hasE:false };
+      const variantMatch = codeWithVariant.match(/\d+/);
+      if (variantMatch) codeMap[baseCode].variants.add(variantMatch[0]);
+      codeMap[baseCode].count++;
+      codeMap[baseCode].lastLine = lineIdx+1;
+      if (desc.includes(codeWithVariant+' B') || new RegExp(codeWithVariant+'\\s+B\\b').test(desc)) codeMap[baseCode].hasB=true;
+      if (desc.includes(codeWithVariant+' E') || new RegExp(codeWithVariant+'\\s+E\\b').test(desc)) codeMap[baseCode].hasE=true;
+    });
+  });
+  const tbody = document.getElementById('codeTable').tBodies[0];
+  tbody.innerHTML = '';
+  Object.keys(codeMap).sort().forEach(baseCode => {
+    const info = codeMap[baseCode];
+    const tr = document.createElement('tr');
+    const cells = [
+      baseCode,
+      info.variants.size>0 ? Array.from(info.variants).sort().join(',') : '—',
+      info.count, info.firstLine, info.lastLine
+    ];
+    cells.forEach((text, i) => {
+      const td = document.createElement('td');
+      td.textContent = text;
+      if (i===1||i===3||i===4) td.style.fontSize='9px';
+      tr.appendChild(td);
+    });
+    const tdStatus = document.createElement('td');
+    if      (!info.hasB && !info.hasE) { tdStatus.textContent='• Single'; tdStatus.className='code-valid'; }
+    else if (info.hasB  &&  info.hasE) { tdStatus.textContent='✓ Valid';  tdStatus.className='code-valid'; }
+    else if (info.hasB  && !info.hasE) { tdStatus.textContent='⚠ No E';   tdStatus.className='code-warning'; }
+    else                               { tdStatus.textContent='⚠ No B';   tdStatus.className='code-error'; }
+    tr.appendChild(tdStatus);
+    tbody.appendChild(tr);
+  });
+  toast(`📚 Extracted ${Object.keys(codeMap).length} codes`);
+}
+
+function clearCodeDatabase() { document.getElementById('codeTable').tBodies[0].innerHTML=''; toast('Code database cleared'); }
+
+function applyCurbDB() {
+  syncFromEditor();
+  data = data.map(l => {
+    Object.keys(curbDB).forEach(c => {
+      const re = new RegExp('\\b'+c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','g');
+      l = l.replace(re, curbDB[c]);
+    });
+    return l;
+  });
+  pushToEditor();
+  toast('Curb DB applied');
+}
+
+function markDelete() {
+  if (!rightEditor) return;
+  syncFromEditor();
+  const now = new Date();
+  const timestamp = `Deleted ${now.toLocaleTimeString('en-US')} ${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`;
+  const sel = rightEditor.getSelection();
+  for (let i=sel.startLineNumber-1; i<sel.endLineNumber; i++) {
+    if (!data[i].startsWith('##DELETE##')) data[i]='##DELETED## '+timestamp+' | '+data[i];
+  }
+  pushToEditor();
+  toast(`Marked ${sel.endLineNumber-sel.startLineNumber+1} line(s) for deletion`);
+}
+
+function markEdit() {
+  if (!rightEditor) return;
+  syncFromEditor();
+  if (!window.editedLines) window.editedLines=new Set();
+  const sel = rightEditor.getSelection();
+  for (let i=sel.startLineNumber-1; i<sel.endLineNumber; i++) window.editedLines.add(i+1);
+  pushToEditor(); applyEditHighlighting();
+  toast(`Marked ${sel.endLineNumber-sel.startLineNumber+1} line(s) as edited`);
+}
+
+function applyEditHighlighting() {
+  if (!rightEditor) return;
+  if (!window.editedLines) window.editedLines=new Set();
+  const decorations = [];
+  data.forEach((line, idx) => {
+    const lineNum = idx+1;
+    if (window.editedLines.has(lineNum)) decorations.push({ range:new monaco.Range(lineNum,1,lineNum,1), options:{ isWholeLine:true, backgroundColor:'rgba(59,130,246,0.15)', borderLeft:'3px solid #3b82f6' } });
+    if (line.startsWith('##DELETED##')) decorations.push({ range:new monaco.Range(lineNum,1,lineNum,1), options:{ isWholeLine:true, backgroundColor:'rgba(239,68,68,0.1)', textDecoration:'line-through', borderLeft:'3px solid #ef4444' } });
+  });
+  if (rightEditor.deltaDecorations) rightEditor.deltaDecorations([], decorations);
+}
+
+/* ─── KNOCKDOWN ─── */
+const curbKD = { 'L612':0.06,'R612':0.06,'L624':0.12,'R624':0.12,'LPARK':0.06,'RPARK':0.06,'L606':0.03,'R606':0.03,'LD418':0.09,'RD418':0.09,'L618':0.09,'R618':0.09 };
+
+function getOffsetMap() {
+  const t = document.getElementById('offsetTable').tBodies[0];
+  const map = {};
+  for (let i=0; i<t.rows.length; i++) {
+    const pt=t.rows[i].cells[0].innerText.trim(), code=t.rows[i].cells[1].innerText.trim(), v=parseFloat(t.rows[i].cells[2].innerText);
+    if (pt&&code&&!isNaN(v)) map[pt]={code,v};
+  }
+  return map;
+}
+
+function processFBK() {
+  syncFromEditor();
+  const map = getOffsetMap();
+  data = data.map(line => {
+    if (line.startsWith('##DELETE##')||!line.includes('F1 VA')) return line;
+    const ptMatch = line.match(/F1 VA (\d+)/);
+    if (!ptMatch) return line;
+    const pt=ptMatch[1];
+    if (!map[pt]) return line;
+    const {code,v}=map[pt];
+    if (!curbDB[code]) return line;
+    let base=curbDB[code];
+    const kd=curbKD[code]||0;
+    const midV=(v-0.012).toFixed(3), lastV=(v-0.012+kd).toFixed(3);
+    base=base.replace('V-0.5','V'+midV).replace(/V-0\.\d+$/,'V'+lastV);
+    return line.replace(/".*?"/,`"RBCB ${base} RWLK"`);
+  });
+  pushToEditor();
+  toast('Knockdown applied');
+}
+
+/* ─── OFFSET TABLE ─── */
+function addOffsetRow() {
+  const tbody=document.getElementById('offsetTable').tBodies[0];
+  const tr=document.createElement('tr');
+  for (let i=0; i<3; i++) { const td=document.createElement('td'); td.contentEditable=true; td.spellcheck=false; tr.appendChild(td); }
+  const del=document.createElement('td');
+  del.innerHTML='<button onclick="this.closest(\'tr\').remove()" style="height:20px;padding:0 6px;font-size:10px;background:var(--danger);border-color:var(--danger);color:#fff;">✕</button>';
+  tr.appendChild(del);
+  tbody.appendChild(tr);
+  tr.cells[0].focus();
+}
+
+function clearOffsetTable() { document.getElementById('offsetTable').tBodies[0].innerHTML=''; }
+
+/* ─── STATS ─── */
+function updateStats() {
+  const changed=data.filter((l,i)=>l!==originalData[i]&&!l.startsWith('##DELETE##')).length;
+  const deleted=data.filter(l=>l.startsWith('##DELETE##')).length;
+  document.getElementById('stLines').textContent   = data.length;
+  document.getElementById('stChanged').textContent = changed;
+  document.getElementById('stDeleted').textContent = deleted;
+  document.getElementById('badgeLines').textContent   = data.length+' lines';
+  document.getElementById('badgeChanged').textContent = changed+' changed';
+  document.getElementById('badgeDeleted').textContent = deleted+' deleted';
+}
+
+/* ─── SYNC SCROLL TOGGLE ─── */
+function syncScrollToggle() {
+  syncScroll=!syncScroll;
+  const btn=document.getElementById('syncBtn');
+  btn.textContent=syncScroll?'🔗 Sync':'🔓 Free';
+  btn.className=syncScroll?'accent':'';
+  toast('Scroll sync '+(syncScroll?'ON':'OFF'));
+}
+
+/* ─── SAVE / LOAD / EXPORT ─── */
+function saveProgress() {
+  syncFromEditor();
+  const blob=new Blob([JSON.stringify({data,originalData})]);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=loadedBaseName+'.json';
+  a.click();
+  toast('Progress saved');
+}
+
+function loadProgress() {
+  const input=document.createElement('input');
+  input.type='file'; input.accept='.json';
+  input.onchange=e=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const obj=JSON.parse(ev.target.result);
+      data=obj.data||obj; originalData=obj.originalData||[...data];
+      if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
+      if (rightEditor) rightEditor.setValue(data.join('\n'));
+      updateStats(); toast('Progress loaded');
+    };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+async function saveToOriginalLocation() {
+  if (!fileHandle) { toast('No original file location. Use Export FBK instead.'); return; }
+  try {
+    syncFromEditor();
+    const txt=data.filter(l=>!l.startsWith('##DELETED##')).join('\n');
+    const writable=await fileHandle.createWritable();
     await writable.write(txt);
     await writable.close();
     toast('✓ Saved to original location!');
-  } catch (err) {
-    console.error('Save error:', err);
-    if (err.name === 'NotAllowedError') {
-      toast('Permission denied. Use Export FBK instead.');
-    } else {
-      toast('Error saving file: ' + err.message);
-    }
+  } catch(err) {
+    if (err.name==='NotAllowedError') toast('Permission denied. Use Export FBK instead.');
+    else toast('Error saving: '+err.message);
   }
 }
 
 function exportTXT() {
-  const txt = data.filter(l => !l.startsWith('##DELETED##')).join('\n');
-  const blob = new Blob([txt]);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = loadedBaseName + '-EDITED.fbk';
+  syncFromEditor();
+  const txt=data.filter(l=>!l.startsWith('##DELETED##')).join('\n');
+  const blob=new Blob([txt]);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=loadedBaseName+'-EDITED.fbk';
   a.click();
-  toast('Exported all lines!');
+  toast('Exported!');
 }
 
+function exportBlueEdits() {
+  syncFromEditor();
+  if (!window.editedLines||window.editedLines.size===0) { toast('No blue (edited) lines marked'); return; }
+  const editedText=[];
+  data.forEach((line,idx)=>{ if(window.editedLines.has(idx+1)&&!line.startsWith('##DELETED##')) editedText.push(line); });
+  if (editedText.length===0) { toast('No valid blue lines to export'); return; }
+  const blob=new Blob([editedText.join('\n')]);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='edited_lines.fbk';
+  a.click();
+  toast(`Exported ${editedText.length} edited line(s)!`);
+}
+
+/* ─── TOAST ─── */
 let toastTimer;
 function toast(msg) {
-  console.log(msg);
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {}, 2200);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2200);
+  document.getElementById('stMsg').textContent=msg;
 }
 </script>
 </body>
