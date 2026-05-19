@@ -1067,6 +1067,9 @@ function getOffsetMap() {
   return map;
 }
 
+/* Action codes that may immediately follow RBCB — expansion is inserted after them */
+const RBCB_ACTION_CODES = new Set(['B','E','BC','EC','OC']);
+
 function processFBK() {
   syncFromEditor();
   const map = getOffsetMap();
@@ -1082,7 +1085,20 @@ function processFBK() {
     const kd=curbKD[code]||0;
     const midV=(v-0.012).toFixed(3), lastV=(v-0.012+kd).toFixed(3);
     base=base.replace('V-0.5','V'+midV).replace(/V-0\.\d+$/,'V'+lastV);
-    return line.replace(/".*?"/,`"RBCB ${base} RWLK"`);
+    return line.replace(/"([^"]*)"/, (_, desc) => {
+      const tokens = desc.split(/\s+/).filter(t => t);
+      const rbcbIdx = tokens.indexOf('RBCB');
+      if (rbcbIdx === -1) {
+        /* No RBCB found — prepend it with expansion */
+        return `"RBCB ${base} ${desc}"`;
+      }
+      /* Insert expansion after RBCB, or after RBCB + action code (B/E/BC/EC/OC) */
+      const nextTok = tokens[rbcbIdx + 1];
+      const insertAfter = (nextTok && RBCB_ACTION_CODES.has(nextTok)) ? rbcbIdx + 1 : rbcbIdx;
+      const before = tokens.slice(0, insertAfter + 1).join(' ');
+      const after  = tokens.slice(insertAfter + 1).join(' ');
+      return '"' + (after ? `${before} ${base} ${after}` : `${before} ${base}`) + '"';
+    });
   });
   pushToEditor();
   toast('Knockdown applied');
