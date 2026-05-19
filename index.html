@@ -28,15 +28,19 @@
 
   /* ── TOOLBAR ── */
   #toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 200;
     height: var(--toolbar-h);
     background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
     display: flex;
     align-items: center;
     gap: 6px;
     padding: 0 12px;
     flex-wrap: nowrap;
     overflow-x: auto;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.5);
   }
 
   #toolbar label {
@@ -54,9 +58,16 @@
 
   .tb-group { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
   .tb-group-label {
-    font-family: 'Rajdhani', sans-serif; font-size: 8px; color: var(--muted);
+    font-family: 'Rajdhani', sans-serif; font-size: 8px;
     letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; line-height: 1;
+    font-weight: 700;
   }
+  .tb-group-label.lbl-load   { color: #38bdf8; }
+  .tb-group-label.lbl-curb   { color: #fb923c; }
+  .tb-group-label.lbl-edit   { color: #a78bfa; }
+  .tb-group-label.lbl-export { color: #4ade80; }
+  .tb-group-label.lbl-save   { color: #60a5fa; }
+
   .tb-group-btns { display: flex; align-items: center; gap: 4px; }
   #toolbar button, #toolbar .file-btn { height: 26px; font-size: 10px; padding: 0 8px; }
 
@@ -80,15 +91,24 @@
     font-size: 11px;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    transition: filter 0.15s, border-color 0.15s;
     flex-shrink: 0;
   }
-  button:hover, .file-btn:hover { background: var(--border); border-color: var(--accent); color: #fff; }
+  button:hover, .file-btn:hover { filter: brightness(1.25); border-color: #fff4; }
 
-  button.accent  { background: var(--accent);  border-color: var(--accent);  color: #fff; }
-  button.accent2 { background: var(--accent2); border-color: var(--accent2); color: #000; }
-  button.danger  { background: var(--danger);  border-color: var(--danger);  color: #fff; }
-  button.success { background: var(--success); border-color: var(--success); color: #000; }
+  /* ── VIVID BUTTON PALETTE ── */
+  button.accent  { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+  button.danger  { background: #ef4444; border-color: #ef4444; color: #fff; }
+  button.success { background: #22c55e; border-color: #22c55e; color: #000; }
+  button.sky     { background: #0ea5e9; border-color: #0ea5e9; color: #fff; }
+  button.violet  { background: #8b5cf6; border-color: #8b5cf6; color: #fff; }
+  button.amber   { background: #f59e0b; border-color: #f59e0b; color: #000; }
+  button.orange  { background: #f97316; border-color: #f97316; color: #fff; }
+  button.cyan    { background: #06b6d4; border-color: #06b6d4; color: #000; }
+  button.teal    { background: #14b8a6; border-color: #14b8a6; color: #000; }
+  button.rose    { background: #f43f5e; border-color: #f43f5e; color: #fff; }
+  button.yellow  { background: #eab308; border-color: #eab308; color: #000; }
+  button.lime    { background: #84cc16; border-color: #84cc16; color: #000; }
 
   #fbkName { font-size: 10px; color: var(--subtext); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -141,7 +161,7 @@
     background: var(--border);
     color: var(--subtext);
   }
-  .badge.changed { background: #2a2510; color: var(--accent2); }
+  .badge.changed { background: #2a2510; color: #f59e0b; }
   .badge.deleted { background: #1f0e0e; color: var(--danger); }
 
   .editor-wrap { flex: 1; min-height: 0; }
@@ -181,7 +201,7 @@
     font-weight: 700;
     font-size: 13px;
     letter-spacing: 1.5px;
-    color: var(--accent2);
+    color: var(--accent);
     text-transform: uppercase;
   }
 
@@ -236,26 +256,27 @@
   #codeTable td { padding: 2px 6px; border-bottom: 1px solid var(--border); color: var(--text); }
   #codeTable tr:hover td { background: #181d2a; }
   #codeTable td.code-valid   { color: var(--success); }
-  #codeTable td.code-warning { color: var(--accent2); }
+  #codeTable td.code-warning { color: #f59e0b; }
   #codeTable td.code-error   { color: var(--danger);  }
 
   /* ── STATUS BAR ── */
   #statusbar {
     height: 22px;
-    background: var(--accent);
+    background: #1e3a5f;
+    border-top: 1px solid #2563eb;
     display: flex;
     align-items: center;
     padding: 0 12px;
     gap: 16px;
     font-size: 10px;
-    color: #fff;
+    color: #93c5fd;
     font-family: 'Rajdhani', sans-serif;
     font-weight: 500;
     letter-spacing: 0.5px;
     flex-shrink: 0;
   }
   #statusbar span { opacity: 0.85; }
-  #statusbar .stat-val { opacity: 1; font-weight: 700; }
+  #statusbar .stat-val { opacity: 1; font-weight: 700; color: #fff; }
 
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
@@ -318,9 +339,9 @@
 
   <!-- LOAD -->
   <div class="tb-group">
-    <span class="tb-group-label">Load</span>
+    <span class="tb-group-label lbl-load">Load</span>
     <div class="tb-group-btns">
-      <button onclick="openFBKFile()" title="Open a .fbk / .txt / .fbd field book file">📂 Open FBK</button>
+      <button onclick="openFBKFile()" class="sky" title="Open a .fbk / .txt / .fbd field book file">📂 Open FBK</button>
       <input type="file" id="fileInput" accept=".fbk,.txt,.fbd,.raw" style="display:none;">
       <span id="fbkName">no file</span>
     </div>
@@ -330,16 +351,16 @@
 
   <!-- CURB -->
   <div class="tb-group">
-    <span class="tb-group-label">Curb</span>
+    <span class="tb-group-label lbl-curb">Curb</span>
     <div class="tb-group-btns">
-      <button id="btnStdDB" onclick="selectDB('std')" title="Use the Standard Curb replacement database">📚 Standard</button>
-      <button id="btnKdDB"  onclick="selectDB('kd')"  title="Use the Knockdown Curb replacement database">⚡ Knockdown</button>
+      <button id="btnStdDB" onclick="selectDB('std')" class="violet" title="Use the Standard Curb replacement database">📚 Standard</button>
+      <button id="btnKdDB"  onclick="selectDB('kd')"  class="amber"  title="Use the Knockdown Curb replacement database">⚡ Knockdown</button>
       <div class="file-btn" title="Load a custom Curb DB .csv / .txt file">
         📂 Custom…
         <input type="file" id="curbFileInput" accept=".csv,.txt">
       </div>
-      <button onclick="applyCurbDB()" title="Replace curb codes in the editor using the active Curb DB">↺ Apply Curb</button>
-      <button onclick="processFBK()"  title="Apply knockdown offsets to all matched curb shot points" class="accent">⚙ Knockdown</button>
+      <button onclick="applyCurbDB()" class="teal"   title="Replace curb codes in the editor using the active Curb DB">↺ Apply Curb</button>
+      <button onclick="processFBK()"  class="orange" title="Apply knockdown offsets to all matched curb shot points">⚙ Knockdown</button>
     </div>
   </div>
 
@@ -347,17 +368,16 @@
 
   <!-- EDIT -->
   <div class="tb-group">
-    <span class="tb-group-label">Edit</span>
+    <span class="tb-group-label lbl-edit">Edit</span>
     <div class="tb-group-btns">
-      <button onclick="removeREF()"       title="Mark all REF lines for deletion">✕ Remove REF</button>
-      <button onclick="fixCodes()"        title="Strip stray spaces inside H / V / CPN codes">🔧 Fix H/V</button>
-      <button onclick="verifyCodePairs()" title="Report linework codes that are missing a B or E marker">✓ Verify B/E</button>
-      <button onclick="fixCodePairs()"    title="Review and selectively apply missing B / E markers" class="accent">⚡ Fix B/E</button>
-      <button onclick="markDelete()" class="danger" title="Mark selected lines for deletion (removed on Export)">🗑 Delete</button>
-      <button onclick="markEdit()"   title="Highlight selected lines as manually edited"
-              style="background:var(--accent);border-color:var(--accent);color:#fff;">📝 Mark Edit</button>
-      <button onclick="syncScrollToggle()" id="syncBtn" class="accent"
-              title="Toggle synchronized scrolling between Original and Modified panels">🔗 Sync</button>
+      <button onclick="undoEdit()"        class="amber"   title="Undo last change in editor">↩ Undo</button>
+      <button onclick="removeREF()"       class="rose"    title="Mark all REF lines for deletion">✕ Remove REF</button>
+      <button onclick="fixCodes()"        class="yellow"  title="Strip stray spaces inside H / V / CPN codes">🔧 Fix H/V</button>
+      <button onclick="verifyCodePairs()" class="cyan"    title="Report linework codes that are missing a B or E marker">✓ Verify B/E</button>
+      <button onclick="fixCodePairs()"    class="accent"  title="Review and selectively apply missing B / E markers">⚡ Fix B/E</button>
+      <button onclick="markDelete()"      class="danger"  title="Mark selected lines for deletion (removed on Export)">🗑 Delete</button>
+      <button onclick="markEdit()"        class="lime"    title="Highlight selected lines as manually edited">📝 Mark Edit</button>
+      <button onclick="syncScrollToggle()" id="syncBtn" class="success" title="Toggle synchronized scrolling between Original and Modified panels">🔗 Sync</button>
     </div>
   </div>
 
@@ -365,7 +385,7 @@
 
   <!-- EXPORT -->
   <div class="tb-group">
-    <span class="tb-group-label">Export</span>
+    <span class="tb-group-label lbl-export">Export</span>
     <div class="tb-group-btns">
       <button id="btnSaveOriginal" onclick="saveToOriginalLocation()" class="success" title="Save directly to the original file location (Chrome/Edge only)" style="display:none;">💾 Save Original</button>
       <button onclick="exportTXT()" class="success" title="Export modified file — deleted lines are removed">⬇ Export FBK</button>
@@ -376,10 +396,10 @@
 
   <!-- SAVE -->
   <div class="tb-group">
-    <span class="tb-group-label">Save</span>
+    <span class="tb-group-label lbl-save">Save</span>
     <div class="tb-group-btns">
-      <button onclick="saveProgress()" class="accent" title="Save all edits to a JSON session file">💾 Save Session</button>
-      <button onclick="loadProgress()"               title="Restore a previously saved session file">📂 Load Session</button>
+      <button onclick="saveProgress()" class="accent" title="Save all edits + knockdown table to a JSON session file">💾 Save Session</button>
+      <button onclick="loadProgress()" class="sky"    title="Restore a previously saved session file">📂 Load Session</button>
     </div>
   </div>
 </div>
@@ -414,8 +434,8 @@
   <div id="offsetArea">
     <div class="oa-header">
       <span class="oa-title">📐 Knockdown Table</span>
-      <button onclick="addOffsetRow()" style="height:24px; font-size:11px;">➕ Row</button>
-      <button onclick="clearOffsetTable()" style="height:24px; font-size:11px;">🗑 Clear</button>
+      <button onclick="addOffsetRow()" style="height:24px;font-size:11px;" class="teal">➕ Row</button>
+      <button onclick="clearOffsetTable()" style="height:24px;font-size:11px;" class="danger">🗑 Clear</button>
     </div>
     <div id="offsetScroll">
       <table id="offsetTable">
@@ -429,8 +449,8 @@
   <div id="codeArea">
     <div class="oa-header">
       <span class="oa-title">📚 CODE DATABASE</span>
-      <button onclick="extractCodesToDatabase()" style="height:24px; font-size:11px; background:var(--accent2); border-color:var(--accent2); color:#000;">⟳ Extract</button>
-      <button onclick="clearCodeDatabase()" style="height:24px; font-size:11px; background:var(--danger); border-color:var(--danger); color:#fff;">🗑 Clear</button>
+      <button onclick="extractCodesToDatabase()" style="height:24px;font-size:11px;" class="cyan">⟳ Extract</button>
+      <button onclick="clearCodeDatabase()"      style="height:24px;font-size:11px;" class="danger">🗑 Clear</button>
     </div>
     <div id="codeScroll">
       <table id="codeTable">
@@ -459,8 +479,8 @@
       <span class="fix-modal-title">🔍 B/E Conflict Review</span>
       <span id="fixCount" style="font-size:11px; color:var(--subtext);"></span>
       <div style="margin-left:auto; display:flex; gap:6px;">
-        <button onclick="fixModalSelectAll(true)"  style="height:24px; font-size:10px; padding:0 8px;">✓ All</button>
-        <button onclick="fixModalSelectAll(false)" style="height:24px; font-size:10px; padding:0 8px;">✕ None</button>
+        <button onclick="fixModalSelectAll(true)"  style="height:24px;font-size:10px;padding:0 8px;" class="success">✓ All</button>
+        <button onclick="fixModalSelectAll(false)" style="height:24px;font-size:10px;padding:0 8px;" class="danger">✕ None</button>
       </div>
     </div>
     <div id="fixList" class="fix-modal-list"></div>
@@ -772,8 +792,8 @@ function selectDB(type) {
 function updateDBButtons() {
   const s = document.getElementById('btnStdDB');
   const k = document.getElementById('btnKdDB');
-  if (s) s.className = activeDB === 'std' ? 'accent' : '';
-  if (k) k.className = activeDB === 'kd'  ? 'accent' : '';
+  if (s) s.className = activeDB === 'std' ? 'accent' : 'violet';
+  if (k) k.className = activeDB === 'kd'  ? 'accent' : 'amber';
 }
 
 document.getElementById('curbFileInput').addEventListener('change', () => {
@@ -809,6 +829,11 @@ function applyLeftPanelHighlighting() {
     decorations.push({ range: new monaco.Range(lineNum, 1, lineNum, 1), options: { isWholeLine: true, backgroundColor: 'rgba(59,130,246,0.2)', borderLeft: '3px solid #3b82f6' } });
   });
   if (leftEditor.deltaDecorations) leftEditor.deltaDecorations([], decorations);
+}
+
+/* ─── UNDO ─── */
+function undoEdit() {
+  if (rightEditor) rightEditor.trigger('keyboard', 'undo', null);
 }
 
 /* ─── TOOLS ─── */
@@ -1088,11 +1113,7 @@ function processFBK() {
     return line.replace(/"([^"]*)"/, (_, desc) => {
       const tokens = desc.split(/\s+/).filter(t => t);
       const rbcbIdx = tokens.indexOf('RBCB');
-      if (rbcbIdx === -1) {
-        /* No RBCB found — prepend it with expansion */
-        return `"RBCB ${base} ${desc}"`;
-      }
-      /* Insert expansion after RBCB, or after RBCB + action code (B/E/BC/EC/OC) */
+      if (rbcbIdx === -1) return `"RBCB ${base} ${desc}"`;
       const nextTok = tokens[rbcbIdx + 1];
       const insertAfter = (nextTok && RBCB_ACTION_CODES.has(nextTok)) ? rbcbIdx + 1 : rbcbIdx;
       const before = tokens.slice(0, insertAfter + 1).join(' ');
@@ -1110,7 +1131,7 @@ function addOffsetRow() {
   const tr=document.createElement('tr');
   for (let i=0; i<3; i++) { const td=document.createElement('td'); td.contentEditable=true; td.spellcheck=false; tr.appendChild(td); }
   const del=document.createElement('td');
-  del.innerHTML='<button onclick="this.closest(\'tr\').remove()" style="height:20px;padding:0 6px;font-size:10px;background:var(--danger);border-color:var(--danger);color:#fff;">✕</button>';
+  del.innerHTML='<button onclick="this.closest(\'tr\').remove()" style="height:20px;padding:0 6px;font-size:10px;background:#ef4444;border-color:#ef4444;color:#fff;">✕</button>';
   tr.appendChild(del);
   tbody.appendChild(tr);
   tr.cells[0].focus();
@@ -1135,14 +1156,13 @@ function syncScrollToggle() {
   syncScroll=!syncScroll;
   const btn=document.getElementById('syncBtn');
   btn.textContent=syncScroll?'🔗 Sync':'🔓 Free';
-  btn.className=syncScroll?'accent':'';
+  btn.className=syncScroll?'success':'amber';
   toast('Scroll sync '+(syncScroll?'ON':'OFF'));
 }
 
 /* ─── SAVE / LOAD / EXPORT ─── */
 function saveProgress() {
   syncFromEditor();
-  /* Snapshot knockdown table rows */
   const t = document.getElementById('offsetTable').tBodies[0];
   const offsetRows = [];
   for (let i = 0; i < t.rows.length; i++) {
@@ -1170,13 +1190,12 @@ function loadProgress() {
       data = obj.data || obj; originalData = obj.originalData || [...data];
       if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
       if (rightEditor) rightEditor.setValue(data.join('\n'));
-      /* Restore knockdown table */
       if (obj.offsetRows && obj.offsetRows.length) {
         const tbody = document.getElementById('offsetTable').tBodies[0];
         tbody.innerHTML = '';
         obj.offsetRows.forEach(row => {
           const tr = document.createElement('tr');
-          ['pt', 'code', 'v'].forEach(key => {
+          ['pt','code','v'].forEach(key => {
             const td = document.createElement('td');
             td.contentEditable = true;
             td.spellcheck = false;
@@ -1184,7 +1203,7 @@ function loadProgress() {
             tr.appendChild(td);
           });
           const del = document.createElement('td');
-          del.innerHTML = '<button onclick="this.closest(\'tr\').remove()" style="height:20px;padding:0 6px;font-size:10px;background:var(--danger);border-color:var(--danger);color:#fff;">✕</button>';
+          del.innerHTML = '<button onclick="this.closest(\'tr\').remove()" style="height:20px;padding:0 6px;font-size:10px;background:#ef4444;border-color:#ef4444;color:#fff;">✕</button>';
           tr.appendChild(del);
           tbody.appendChild(tr);
         });
