@@ -1142,25 +1142,55 @@ function syncScrollToggle() {
 /* ─── SAVE / LOAD / EXPORT ─── */
 function saveProgress() {
   syncFromEditor();
-  const blob=new Blob([JSON.stringify({data,originalData})]);
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=loadedBaseName+'.json';
+  /* Snapshot knockdown table rows */
+  const t = document.getElementById('offsetTable').tBodies[0];
+  const offsetRows = [];
+  for (let i = 0; i < t.rows.length; i++) {
+    offsetRows.push({
+      pt:   t.rows[i].cells[0].innerText.trim(),
+      code: t.rows[i].cells[1].innerText.trim(),
+      v:    t.rows[i].cells[2].innerText.trim(),
+    });
+  }
+  const blob = new Blob([JSON.stringify({ data, originalData, offsetRows })]);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = loadedBaseName + '.json';
   a.click();
-  toast('Progress saved');
+  toast('Progress saved (' + offsetRows.length + ' knockdown row(s) included)');
 }
 
 function loadProgress() {
-  const input=document.createElement('input');
-  input.type='file'; input.accept='.json';
-  input.onchange=e=>{
-    const reader=new FileReader();
-    reader.onload=ev=>{
-      const obj=JSON.parse(ev.target.result);
-      data=obj.data||obj; originalData=obj.originalData||[...data];
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const obj = JSON.parse(ev.target.result);
+      data = obj.data || obj; originalData = obj.originalData || [...data];
       if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
       if (rightEditor) rightEditor.setValue(data.join('\n'));
-      updateStats(); toast('Progress loaded');
+      /* Restore knockdown table */
+      if (obj.offsetRows && obj.offsetRows.length) {
+        const tbody = document.getElementById('offsetTable').tBodies[0];
+        tbody.innerHTML = '';
+        obj.offsetRows.forEach(row => {
+          const tr = document.createElement('tr');
+          ['pt', 'code', 'v'].forEach(key => {
+            const td = document.createElement('td');
+            td.contentEditable = true;
+            td.spellcheck = false;
+            td.innerText = row[key] || '';
+            tr.appendChild(td);
+          });
+          const del = document.createElement('td');
+          del.innerHTML = '<button onclick="this.closest(\'tr\').remove()" style="height:20px;padding:0 6px;font-size:10px;background:var(--danger);border-color:var(--danger);color:#fff;">✕</button>';
+          tr.appendChild(del);
+          tbody.appendChild(tr);
+        });
+      }
+      updateStats();
+      toast('Progress loaded' + (obj.offsetRows ? ' + ' + obj.offsetRows.length + ' knockdown row(s)' : ''));
     };
     reader.readAsText(e.target.files[0]);
   };
