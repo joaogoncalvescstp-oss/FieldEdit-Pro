@@ -1313,8 +1313,8 @@ function getOffsetMap() {
   return map;
 }
 
-/* Action codes that may immediately follow RBCB — expansion is inserted after them */
-const RBCB_ACTION_CODES = new Set(['B','E','BC','EC','OC']);
+/* Coding-system action codes that immediately follow an RBCB token — template is inserted after them */
+const RBCB_ACTION_CODES = new Set(['B','C','E','CLS','BC','EC','CIR','OC']);
 
 function processFBK() {
   syncFromEditor();
@@ -1333,10 +1333,14 @@ function processFBK() {
     base=base.replace('V-0.5','V'+midV).replace(/V-0\.\d+$/,'V'+lastV);
     return line.replace(/"([^"]*)"/, (_, desc) => {
       const tokens = desc.split(/\s+/).filter(t => t);
-      const rbcbIdx = tokens.indexOf('RBCB');
+      // Match RBCB with optional digit suffix (e.g. RBCB, RBCB8)
+      const rbcbIdx = tokens.findIndex(t => /^RBCB\d*$/.test(t));
       if (rbcbIdx === -1) return `"RBCB ${base} ${desc}"`;
-      const nextTok = tokens[rbcbIdx + 1];
-      const insertAfter = (nextTok && RBCB_ACTION_CODES.has(nextTok)) ? rbcbIdx + 1 : rbcbIdx;
+      // Skip any immediately following action/curve codes before inserting template
+      let insertAfter = rbcbIdx;
+      if (insertAfter + 1 < tokens.length && RBCB_ACTION_CODES.has(tokens[insertAfter + 1])) {
+        insertAfter++;
+      }
       const before = tokens.slice(0, insertAfter + 1).join(' ');
       const after  = tokens.slice(insertAfter + 1).join(' ');
       return '"' + (after ? `${before} ${base} ${after}` : `${before} ${base}`) + '"';
