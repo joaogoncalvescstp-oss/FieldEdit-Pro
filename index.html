@@ -393,8 +393,8 @@
   <div class="tb-group">
     <span class="tb-group-label lbl-load">Load</span>
     <div class="tb-group-btns">
-      <button onclick="openFBKFile()" class="sky" title="Open a .fbk / .txt / .fbd field book file">📂 Open FBK</button>
-      <input type="file" id="fileInput" accept=".fbk,.txt,.fbd,.raw" style="display:none;">
+      <button onclick="openFBKFile()" class="sky" title="Open one or more .fbk / .txt / .fbd field book files — each opens in a new tab">📂 Open FBK</button>
+      <input type="file" id="fileInput" accept=".fbk,.txt,.fbd,.raw" multiple style="display:none;">
       <span id="fbkName">no file</span>
     </div>
   </div>
@@ -916,25 +916,36 @@ function decorateLeft() {
 }
 
 /* ─── FILE LOAD ─── */
+async function _loadFileIntoTab(file, handle) {
+  fileHandle = handle;
+  const baseName = file.name.replace(/\.[^.]+$/, '');
+  loadedBaseName = baseName;
+  document.getElementById('fbkName').textContent = file.name + (handle ? ' ✎' : '');
+  document.getElementById('btnSaveOriginal').style.display = handle ? 'block' : 'none';
+  if (tabs[activeTabIdx]) { tabs[activeTabIdx].name = baseName; tabs[activeTabIdx].fileHandle = handle; tabs[activeTabIdx].loadedBaseName = baseName; renderTabBar(); }
+  const text = handle ? await file.text() : await new Promise(res => { const r=new FileReader(); r.onload=e=>res(e.target.result); r.readAsText(file); });
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  originalData = [...lines]; data = [...lines];
+  window.editedLines = new Set(); window.toolModifiedLines = new Set();
+  if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
+  if (rightEditor) rightEditor.setValue(data.join('\n'));
+  updateStats();
+}
+
 async function openFBKFile() {
   try {
     if ('showOpenFilePicker' in window) {
       const handles = await window.showOpenFilePicker({
+        multiple: true,
         types: [{ description: 'Field Book Files', accept: { 'text/plain': ['.fbk','.txt','.fbd','.raw'] } }]
       });
-      fileHandle = handles[0];
-      const file = await fileHandle.getFile();
-      document.getElementById('fbkName').textContent = file.name + ' ✎';
-      document.getElementById('btnSaveOriginal').style.display = 'block';
-      loadedBaseName = file.name.replace(/\.[^.]+$/, '');
-      if (tabs[activeTabIdx]) { tabs[activeTabIdx].name = loadedBaseName; renderTabBar(); }
-      const text = await file.text();
-      const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-      originalData = [...lines]; data = [...lines];
-      if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
-      if (rightEditor) rightEditor.setValue(data.join('\n'));
-      updateStats();
-      toast('Loaded ' + lines.length + ' lines (original location remembered)');
+      for (let i = 0; i < handles.length; i++) {
+        if (i > 0) newTab();
+        await _loadFileIntoTab(await handles[i].getFile(), handles[i]);
+      }
+      toast(handles.length > 1
+        ? `Loaded ${handles.length} files in ${handles.length} tabs`
+        : `Loaded ${data.length} lines (original location remembered)`);
     } else {
       document.getElementById('fileInput').click();
     }
@@ -943,24 +954,17 @@ async function openFBKFile() {
   }
 }
 
-document.getElementById('fileInput').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  fileHandle = null;
-  document.getElementById('fbkName').textContent = file.name;
-  document.getElementById('btnSaveOriginal').style.display = 'none';
-  loadedBaseName = file.name.replace(/\.[^.]+$/, '');
-  if (tabs[activeTabIdx]) { tabs[activeTabIdx].name = loadedBaseName; renderTabBar(); }
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const lines = ev.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-    originalData = [...lines]; data = [...lines];
-    if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
-    if (rightEditor) rightEditor.setValue(data.join('\n'));
-    updateStats();
-    toast('Loaded ' + lines.length + ' lines');
-  };
-  reader.readAsText(file);
+document.getElementById('fileInput').addEventListener('change', async e => {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  for (let i = 0; i < files.length; i++) {
+    if (i > 0) newTab();
+    await _loadFileIntoTab(files[i], null);
+  }
+  toast(files.length > 1
+    ? `Loaded ${files.length} files in ${files.length} tabs`
+    : `Loaded ${data.length} lines`);
+  e.target.value = '';
 });
 
 /* ─── CURB DB ─── */
