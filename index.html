@@ -394,7 +394,9 @@
     <span class="tb-group-label lbl-load">Load</span>
     <div class="tb-group-btns">
       <button onclick="openFBKFile()" class="sky" title="Open one or more .fbk / .txt / .fbd field book files — each opens in a new tab">📂 Open FBK</button>
+      <button onclick="reloadActiveTab()" class="accent" title="Reload the active tab's file from disk, discarding all unsaved changes">↺ Reload</button>
       <input type="file" id="fileInput" accept=".fbk,.txt,.fbd,.raw" multiple style="display:none;">
+      <input type="file" id="reloadFileInput" accept=".fbk,.txt,.fbd,.raw" style="display:none;">
       <span id="fbkName">no file</span>
     </div>
   </div>
@@ -964,6 +966,36 @@ document.getElementById('fileInput').addEventListener('change', async e => {
   e.target.value = '';
 });
 
+async function reloadActiveTab() {
+  const tab = tabs[activeTabIdx];
+  if (!tab) { toast('No active tab'); return; }
+
+  // Prefer File System Access API handle (Chrome/Edge — remembers original location)
+  if (fileHandle) {
+    try {
+      const perm = await fileHandle.queryPermission({ mode: 'read' });
+      if (perm !== 'granted') await fileHandle.requestPermission({ mode: 'read' });
+      const file = await fileHandle.getFile();
+      await _loadFileIntoTab(file, fileHandle);
+      toast(`↺ Reloaded ${file.name}`);
+    } catch (err) {
+      if (err.name !== 'AbortError') toast('Reload failed: ' + err.message);
+    }
+    return;
+  }
+
+  // No handle — ask user to re-select the file (fallback for Firefox / drag-drop loads)
+  const inp = document.getElementById('reloadFileInput');
+  inp.onchange = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    await _loadFileIntoTab(file, null);
+    toast(`↺ Reloaded ${file.name}`);
+    inp.value = '';
+  };
+  inp.click();
+}
+
 /* ─── CURB DB ─── */
 let curbDBs = { std: {}, kd: {} };
 let activeDB = '';
@@ -1317,7 +1349,7 @@ const RBCB_ACTION_CODES = new Set(['B','C','E','CLS','BC','EC','CIR','OC']);
    Prevents duplication when re-applying knockdown to a file saved with knockdown already embedded. */
 function stripKnockdownTemplate(desc) {
   return desc.replace(
-    /(RBCB\d*(?:\s+(?:B|C|E|CLS|BC|EC|CIR|OC))?)\s+(?:H-?\d+(?:\.\d+)?\s+V-?\d+(?:\.\d+)?\s*)+/g,
+    /(RBCB\d*(?:\s+(?:B|C|E|CLS|BC|EC|CIR|OC))?)\ s+(?:H-?\d+(?:\.\d+)?\s+V-?\d+(?:\.\d+)?\s*)+/g,
     '$1'
   ).trim();
 }
