@@ -487,8 +487,11 @@
   <div id="offsetArea">
     <div class="oa-header">
       <span class="oa-title">📐 Knockdown Table</span>
-      <button onclick="addOffsetRow()" style="height:24px;font-size:11px;" class="teal">➕ Row</button>
+      <button onclick="addOffsetRow()"     style="height:24px;font-size:11px;" class="teal">➕ Row</button>
+      <button onclick="sortOffsetTable()"  style="height:24px;font-size:11px;" class="sky">⇅ Sort</button>
       <button onclick="clearOffsetTable()" style="height:24px;font-size:11px;" class="danger">🗑 Clear</button>
+      <input id="offsetSearch" oninput="filterOffsetTable()" placeholder="🔍 Search pt / code…"
+        style="height:22px;font-size:10px;padding:0 6px;background:#0d0f14;border:1px solid #252a38;border-radius:4px;color:#e2e8f0;width:140px;font-family:'JetBrains Mono',monospace;">
     </div>
     <div id="offsetScroll">
       <table id="offsetTable">
@@ -628,17 +631,7 @@ function restoreTab(tab) {
   const tbody = document.getElementById('offsetTable').tBodies[0];
   tbody.innerHTML = '';
   tab.offsetRows.forEach(row => {
-    const tr = document.createElement('tr');
-    ['pt','code','v'].forEach(key => {
-      const td = document.createElement('td');
-      td.contentEditable = true; td.spellcheck = false;
-      td.innerText = row[key] || '';
-      tr.appendChild(td);
-    });
-    const del = document.createElement('td');
-    del.innerHTML = '<button onclick="this.closest(\'tr\').remove()" style="height:20px;padding:0 6px;font-size:10px;background:#ef4444;border-color:#ef4444;color:#fff;">✕</button>';
-    tr.appendChild(del);
-    tbody.appendChild(tr);
+    tbody.appendChild(_makeOffsetRow(row.pt, row.code, row.v));
   });
 
   const nameEl = document.getElementById('fbkName');
@@ -1374,18 +1367,56 @@ function processFBK() {
 }
 
 /* ─── OFFSET TABLE ─── */
-function addOffsetRow() {
-  const tbody=document.getElementById('offsetTable').tBodies[0];
-  const tr=document.createElement('tr');
-  for (let i=0; i<3; i++) { const td=document.createElement('td'); td.contentEditable=true; td.spellcheck=false; tr.appendChild(td); }
-  const del=document.createElement('td');
-  del.innerHTML='<button onclick="this.closest(\'tr\').remove()" style="height:20px;padding:0 6px;font-size:10px;background:#ef4444;border-color:#ef4444;color:#fff;">✕</button>';
+function _makeOffsetRow(pt, code, v) {
+  const tr = document.createElement('tr');
+  ['pt','code','v'].forEach((key, i) => {
+    const td = document.createElement('td');
+    td.contentEditable = true; td.spellcheck = false;
+    td.innerText = [pt, code, v][i] || '';
+    td.addEventListener('input', () => filterOffsetTable());
+    tr.appendChild(td);
+  });
+  const del = document.createElement('td');
+  del.innerHTML = '<button onclick="this.closest(\'tr\').remove()" style="height:20px;padding:0 6px;font-size:10px;background:#ef4444;border-color:#ef4444;color:#fff;">✕</button>';
   tr.appendChild(del);
+  return tr;
+}
+
+function addOffsetRow() {
+  const tbody = document.getElementById('offsetTable').tBodies[0];
+  const tr = _makeOffsetRow();
   tbody.appendChild(tr);
   tr.cells[0].focus();
 }
 
-function clearOffsetTable() { document.getElementById('offsetTable').tBodies[0].innerHTML=''; }
+function sortOffsetTable() {
+  const tbody = document.getElementById('offsetTable').tBodies[0];
+  const rows = Array.from(tbody.rows);
+  rows.sort((a, b) => {
+    const pa = parseInt(a.cells[0].innerText.trim()) || 0;
+    const pb = parseInt(b.cells[0].innerText.trim()) || 0;
+    return pa - pb;
+  });
+  rows.forEach(r => tbody.appendChild(r));
+  toast('Knockdown table sorted by point #');
+}
+
+function filterOffsetTable() {
+  const q = (document.getElementById('offsetSearch').value || '').toLowerCase().trim();
+  const tbody = document.getElementById('offsetTable').tBodies[0];
+  Array.from(tbody.rows).forEach(row => {
+    if (!q) { row.style.display = ''; return; }
+    const pt   = row.cells[0].innerText.trim().toLowerCase();
+    const code = row.cells[1].innerText.trim().toLowerCase();
+    row.style.display = (pt.includes(q) || code.includes(q)) ? '' : 'none';
+  });
+}
+
+function clearOffsetTable() {
+  document.getElementById('offsetTable').tBodies[0].innerHTML = '';
+  const s = document.getElementById('offsetSearch');
+  if (s) s.value = '';
+}
 
 /* ─── STATS ─── */
 function updateStats() {
