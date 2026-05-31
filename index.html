@@ -582,6 +582,7 @@ function _newTabObj(name) {
     offsetRows: [],
     editedLines: new Set(),
     toolModifiedLines: new Set(),
+    knockdownOriginals: {},
     scrollLeft: 0,
     scrollRight: 0,
   };
@@ -607,6 +608,7 @@ function captureCurrentTab() {
   tab.offsetRows       = offsetRows;
   tab.editedLines      = window.editedLines      ? new Set(window.editedLines)      : new Set();
   tab.toolModifiedLines= window.toolModifiedLines? new Set(window.toolModifiedLines): new Set();
+  tab.knockdownOriginals = window.knockdownOriginals ? { ...window.knockdownOriginals } : {};
   tab.scrollLeft       = leftEditor  ? leftEditor.getScrollTop()  : 0;
   tab.scrollRight      = rightEditor ? rightEditor.getScrollTop() : 0;
 }
@@ -618,6 +620,7 @@ function restoreTab(tab) {
   loadedBaseName = tab.loadedBaseName;
   window.editedLines       = new Set(tab.editedLines);
   window.toolModifiedLines = new Set(tab.toolModifiedLines);
+  window.knockdownOriginals = { ...tab.knockdownOriginals };
 
   if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
   if (rightEditor) rightEditor.setValue(data.join('\n'));
@@ -926,7 +929,8 @@ async function _loadFileIntoTab(file, handle) {
   const text = handle ? await file.text() : await new Promise(res => { const r=new FileReader(); r.onload=e=>res(e.target.result); r.readAsText(file); });
   const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
   originalData = [...lines]; data = [...lines];
-  window.editedLines = new Set(); window.toolModifiedLines = new Set();
+  window.editedLines = new Set(); window.toolModifiedLines = new Set(); window.knockdownOriginals = {};
+  if (tabs[activeTabIdx]) tabs[activeTabIdx].knockdownOriginals = {};
   if (leftEditor)  leftEditor.setValue(originalData.join('\n'));
   if (rightEditor) rightEditor.setValue(data.join('\n'));
   updateStats();
@@ -1319,7 +1323,8 @@ const RBCB_ACTION_CODES = new Set(['B','C','E','CLS','BC','EC','CIR','OC']);
 function processFBK() {
   syncFromEditor();
   const map = getOffsetMap();
-  data = data.map(line => {
+  if (!window.knockdownOriginals) window.knockdownOriginals = {};
+  data = data.map((line, lineIdx) => {
     if (line.startsWith('##DELETE##')||!line.includes('F1 VA')) return line;
     const ptMatch = line.match(/F1 VA (\d+)/);
     if (!ptMatch) return line;
@@ -1327,16 +1332,19 @@ function processFBK() {
     if (!map[pt]) return line;
     const {code,v}=map[pt];
     if (!curbDB[code]) return line;
+    // Store original line before first knockdown so re-apply never duplicates
+    if (window.knockdownOriginals[lineIdx] === undefined) {
+      window.knockdownOriginals[lineIdx] = line;
+    }
+    const baseLine = window.knockdownOriginals[lineIdx];
     let base=curbDB[code];
     const kd=curbKD[code]||0;
     const midV=(v-0.012).toFixed(3), lastV=(v-0.012+kd).toFixed(3);
     base=base.replace('V-0.5','V'+midV).replace(/V-0\.\d+$/,'V'+lastV);
-    return line.replace(/"([^"]*)"/, (_, desc) => {
+    return baseLine.replace(/"([^"]*)"/, (_, desc) => {
       const tokens = desc.split(/\s+/).filter(t => t);
-      // Match RBCB with optional digit suffix (e.g. RBCB, RBCB8)
       const rbcbIdx = tokens.findIndex(t => /^RBCB\d*$/.test(t));
       if (rbcbIdx === -1) return `"RBCB ${base} ${desc}"`;
-      // Skip any immediately following action/curve codes before inserting template
       let insertAfter = rbcbIdx;
       if (insertAfter + 1 < tokens.length && RBCB_ACTION_CODES.has(tokens[insertAfter + 1])) {
         insertAfter++;
@@ -1396,6 +1404,7 @@ function saveProgress() {
     offsetRows:    tab.offsetRows,
     editedLines:   [...tab.editedLines],
     toolModifiedLines: [...tab.toolModifiedLines],
+    knockdownOriginals: tab.knockdownOriginals || {},
   }));
   const session = { version: 2, activeTabIdx, tabs: sessionTabs };
   const blob = new Blob([JSON.stringify(session)]);
@@ -1426,6 +1435,7 @@ function loadProgress() {
           offsetRows:    t.offsetRows || [],
           editedLines:   new Set(t.editedLines || []),
           toolModifiedLines: new Set(t.toolModifiedLines || []),
+          knockdownOriginals: t.knockdownOriginals || {},
           scrollLeft: 0, scrollRight: 0,
         }));
         if (!tabs.length) tabs = [_newTabObj()];
