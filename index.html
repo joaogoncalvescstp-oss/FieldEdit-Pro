@@ -1324,7 +1324,7 @@ function processFBK() {
   syncFromEditor();
   const map = getOffsetMap();
   if (!window.knockdownOriginals) window.knockdownOriginals = {};
-  data = data.map((line, lineIdx) => {
+  data = data.map(line => {
     if (line.startsWith('##DELETE##')||!line.includes('F1 VA')) return line;
     const ptMatch = line.match(/F1 VA (\d+)/);
     if (!ptMatch) return line;
@@ -1332,27 +1332,32 @@ function processFBK() {
     if (!map[pt]) return line;
     const {code,v}=map[pt];
     if (!curbDB[code]) return line;
-    // Store original line before first knockdown so re-apply never duplicates
-    if (window.knockdownOriginals[lineIdx] === undefined) {
-      window.knockdownOriginals[lineIdx] = line;
+    const descMatch = line.match(/"([^"]*)"/);
+    if (!descMatch) return line;
+    // Key by point number (stable across line shifts). Store original desc on first apply.
+    if (window.knockdownOriginals[pt] === undefined) {
+      window.knockdownOriginals[pt] = descMatch[1];
     }
-    const baseLine = window.knockdownOriginals[lineIdx];
+    const origDesc = window.knockdownOriginals[pt];
     let base=curbDB[code];
     const kd=curbKD[code]||0;
     const midV=(v-0.012).toFixed(3), lastV=(v-0.012+kd).toFixed(3);
     base=base.replace('V-0.5','V'+midV).replace(/V-0\.\d+$/,'V'+lastV);
-    return baseLine.replace(/"([^"]*)"/, (_, desc) => {
-      const tokens = desc.split(/\s+/).filter(t => t);
-      const rbcbIdx = tokens.findIndex(t => /^RBCB\d*$/.test(t));
-      if (rbcbIdx === -1) return `"RBCB ${base} ${desc}"`;
+    const tokens = origDesc.split(/\s+/).filter(t => t);
+    const rbcbIdx = tokens.findIndex(t => /^RBCB\d*$/.test(t));
+    let newDesc;
+    if (rbcbIdx === -1) {
+      newDesc = `RBCB ${base} ${origDesc}`;
+    } else {
       let insertAfter = rbcbIdx;
       if (insertAfter + 1 < tokens.length && RBCB_ACTION_CODES.has(tokens[insertAfter + 1])) {
         insertAfter++;
       }
       const before = tokens.slice(0, insertAfter + 1).join(' ');
       const after  = tokens.slice(insertAfter + 1).join(' ');
-      return '"' + (after ? `${before} ${base} ${after}` : `${before} ${base}`) + '"';
-    });
+      newDesc = after ? `${before} ${base} ${after}` : `${before} ${base}`;
+    }
+    return line.replace(/"([^"]*)"/, () => `"${newDesc}"`);
   });
   pushToEditor();
   toast('Knockdown applied');
