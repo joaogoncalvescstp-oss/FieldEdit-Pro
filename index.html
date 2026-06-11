@@ -407,13 +407,13 @@
   <div class="tb-group">
     <span class="tb-group-label lbl-curb">Curb</span>
     <div class="tb-group-btns">
-      <button id="btnStdDB" onclick="selectDB('std')" class="violet" title="Use the Standard Curb replacement database">📚 Standard</button>
-      <button id="btnKdDB"  onclick="selectDB('kd')"  class="amber"  title="Use the Knockdown Curb replacement database">⚡ Knockdown</button>
+      <button id="btnStdDB" onclick="selectDB('std')" class="violet" title="Back of Curb template database — rod on the back of curb">📚 Back of Curb</button>
+      <button id="btnKdDB"  onclick="selectDB('kd')"  class="amber"  title="Flow Line template database — rod on the gutter flow line">🌊 Flow Line</button>
       <div class="file-btn" title="Load a custom Curb DB .csv / .txt file">
         📂 Custom…
         <input type="file" id="curbFileInput" accept=".csv,.txt">
       </div>
-      <button onclick="applyCurbDB()" class="teal"   title="Replace curb codes in the editor using the active Curb DB">↺ Apply Curb</button>
+      <button onclick="applyCurbDB()" class="teal"   title="Expand curb codes to offsets — RBCB shots use the Back of Curb DB, RCFL shots use the Flow Line DB (auto)">↺ Apply Curb</button>
       <button onclick="processFBK()"  class="orange" title="Apply knockdown offsets to all matched curb shot points">⚙ Knockdown</button>
     </div>
   </div>
@@ -428,6 +428,7 @@
       <button onclick="removeREF()"       class="rose"    title="Mark all REF lines for deletion">✕ Remove REF</button>
       <button onclick="fixCodes()"        class="yellow"  title="Strip stray spaces inside H / V / CPN codes">🔧 Fix H/V</button>
       <button onclick="verifyCodePairs()" class="cyan"    title="Report linework codes that are missing a B or E marker">✓ Verify B/E</button>
+      <button onclick="verifySetups()"     class="teal"    title="Check every STN/BS setup against the control coordinates (azimuth + elevation) and flag duplicate point numbers">🛰 Verify Setups</button>
       <button onclick="fixCodePairs()"    class="accent"  title="Review and selectively apply missing B / E markers">⚡ Fix B/E</button>
       <button onclick="markDelete()"      class="danger"  title="Mark selected lines for deletion (removed on Export)">🗑 Delete</button>
       <button onclick="markEdit()"        class="lime"    title="Highlight selected lines as manually edited">📝 Mark Edit</button>
@@ -1015,8 +1016,8 @@ function parseCurbLines(text) {
 async function autoLoadDBs() {
   try {
     const [stdText, kdText] = await Promise.all([
-      fetch('data/std-curb_db.txt').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }),
-      fetch('data/knock-down-curb_db.txt').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+      fetch('data/back-of-curb_db.txt').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }),
+      fetch('data/flow-line_db.txt').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
     ]);
     curbDBs.std = parseCurbLines(stdText);
     curbDBs.kd  = parseCurbLines(kdText);
@@ -1024,7 +1025,7 @@ async function autoLoadDBs() {
     activeDB = 'std';
     updateDBButtons();
     document.getElementById('stCurb').textContent = Object.keys(curbDB).length;
-    toast('DBs loaded — ' + Object.keys(curbDB).length + ' STD types active');
+    toast('DBs loaded — ' + Object.keys(curbDB).length + ' Back of Curb types active');
   } catch (e) {
     toast('Auto-load failed — use Custom DB button');
   }
@@ -1036,7 +1037,7 @@ function selectDB(type) {
   activeDB = type;
   updateDBButtons();
   document.getElementById('stCurb').textContent = Object.keys(curbDB).length;
-  toast((type === 'std' ? 'STD' : 'KD') + ' Curb DB active — ' + Object.keys(curbDB).length + ' types');
+  toast((type === 'std' ? 'Back of Curb' : 'Flow Line') + ' Curb DB active — ' + Object.keys(curbDB).length + ' types');
 }
 
 function updateDBButtons() {
@@ -1130,6 +1131,112 @@ function verifyCodePairs() {
   });
   if (issues.length === 0) toast('✓ All linework codes have valid B/E pairs!');
   else { toast(`Found ${issues.length} linework code issues:`); alert('LINEWORK CODE VERIFICATION REPORT\n\n' + issues.slice(0,20).join('\n') + (issues.length>20 ? `\n\n... and ${issues.length-20} more` : '')); }
+}
+
+/* ─── VERIFY SETUPS ───
+   Parses every STN/BS pair, inverses the control coordinates from the
+   NEZ records, and flags:
+     • BS azimuth that disagrees with the computed control azimuth
+       (catches a flipped / fat-fingered station or backsight number)
+     • Duplicate point numbers stored more than once at conflicting
+       locations (catches a topo shot keyed with a control point #)
+   Read-only: reports only, never edits the file. Decimal angle fields
+   in the FBK are DD.MMSSss (DMS packed), so they're unpacked first.   */
+function dmsToDeg(packed) {
+  // 159.58389  ->  159° 58' 38.9"
+  const neg = packed < 0; packed = Math.abs(packed);
+  const d = Math.floor(packed);
+  const frac = (packed - d) * 100;
+  const m = Math.floor(frac + 1e-9);
+  const s = (frac - m) * 100;
+  const deg = d + m/60 + s/3600;
+  return neg ? -deg : deg;
+}
+function normAz(a) { a %= 360; return a < 0 ? a + 360 : a; }
+
+function verifySetups() {
+  syncFromEditor();
+
+  // 1) collect control coordinates from NEZ records:  NEZ <pt> N E Z "desc"
+  const ctrl = {};
+  const nezRe = /^NEZ\s+(\d+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)/;
+  data.forEach(line => {
+    const m = line.match(nezRe);
+    if (m) ctrl[m[1]] = { n:+m[2], e:+m[3], z:+m[4] };
+  });
+
+  // 2) walk STN / BS pairs
+  const stnRe = /^STN\s+(\d+)\s/;
+  const bsRe  = /^BS\s+(\d+)\s+([-\d.]+)/;
+  const issues = [];
+  for (let i = 0; i < data.length; i++) {
+    const sm = data[i].match(stnRe);
+    if (!sm) continue;
+    // find the next BS line within the next few records
+    let bm = null, bsLine = -1;
+    for (let j = i+1; j < Math.min(i+6, data.length); j++) {
+      const t = data[j].match(bsRe);
+      if (t) { bm = t; bsLine = j; break; }
+      if (data[j].match(stnRe)) break;
+    }
+    if (!bm) continue;
+    const stn = sm[1], bs = bm[1], bsCircle = normAz(dmsToDeg(+bm[2]));
+    const a = ctrl[stn], b = ctrl[bs];
+    if (!a || !b) {
+      issues.push(`Line ${i+1}: STN ${stn} / BS ${bs} — no control coords to check (one of these points has no NEZ record).`);
+      continue;
+    }
+    const computedAz = normAz(Math.atan2(b.e - a.e, b.n - a.n) * 180/Math.PI);
+    let diff = Math.abs(computedAz - bsCircle); if (diff > 180) diff = 360 - diff;
+    const diffSec = diff * 3600;
+    if (diffSec > 120) { // > 2 arc-min disagreement
+      const flippedAz = normAz(computedAz + 180);
+      let fd = Math.abs(flippedAz - bsCircle); if (fd > 180) fd = 360 - fd;
+      const hint = fd*3600 < 120
+        ? '  → matches the REVERSE direction — STN and BS look SWAPPED.'
+        : '';
+      issues.push(`Line ${bsLine+1}: STN ${stn}/BS ${bs} azimuth mismatch — BS circle ${bsCircle.toFixed(4)}° vs control ${computedAz.toFixed(4)}° (Δ ${(diff).toFixed(3)}°).${hint}`);
+    }
+  }
+
+  // 3) duplicate point numbers stored at conflicting locations WITHIN
+  //    the same setup. A control point legitimately gets re-shot as a
+  //    foresight/check from many different setups — that's normal and
+  //    must NOT be flagged. The real mis-key is the SAME point stored
+  //    twice between one STN and the next, at conflicting distances:
+  //    one of them is a topo shot that got a control number keyed in.
+  const obsRe = /^F[12] VA (\d+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)/;
+  let blockSeen = {};               // resets at every STN
+  const flushBlock = () => {
+    Object.keys(blockSeen).forEach(pt => {
+      const rows = blockSeen[pt];
+      if (rows.length < 2 || !ctrl[pt]) return;
+      const sds = rows.map(r => r.sd);
+      const spread = Math.max(...sds) - Math.min(...sds);
+      if (spread > 1.0) {           // shots in one setup differ by >1 ft SD
+        const lines = rows.map(r => r.idx+1).join(', ');
+        issues.push(`Duplicate pt ${pt} in one setup: stored ${rows.length}× at conflicting distances (lines ${lines}, Δ ${spread.toFixed(2)} ft) — one is likely a topo shot mis-keyed as control ${pt}.`);
+      }
+    });
+    blockSeen = {};
+  };
+  data.forEach((line, idx) => {
+    if (line.match(stnRe)) { flushBlock(); return; }
+    if (line.startsWith('##DELETE')) return;
+    const m = line.match(obsRe);
+    if (!m) return;
+    const pt = m[1];
+    if (!ctrl[pt]) return;          // only control-numbered shots matter
+    (blockSeen[pt] = blockSeen[pt] || []).push({ idx, sd:+m[3] });
+  });
+  flushBlock();
+
+  // 4) report
+  if (!issues.length) { toast('✓ All setups check against control — no azimuth or duplicate-point issues.'); return; }
+  toast(`Found ${issues.length} setup issue(s)`);
+  alert('SETUP VERIFICATION REPORT\n(checked against NEZ control coords)\n\n'
+        + issues.slice(0,25).join('\n\n')
+        + (issues.length>25 ? `\n\n... and ${issues.length-25} more` : ''));
 }
 
 function fixCodePairs() {
@@ -1283,15 +1390,32 @@ function clearCodeDatabase() { document.getElementById('codeTable').tBodies[0].i
 
 function applyCurbDB() {
   syncFromEditor();
+  // Auto-pick the template DB per shot from the marker in its description:
+  //   RBCB (rod on back of curb) -> Back of Curb DB   (curbDBs.std)
+  //   RCFL (rod on flow line)    -> Flow Line DB       (curbDBs.kd)
+  const boc = curbDBs.std || {}, fl = curbDBs.kd || {};
+  if (!Object.keys(boc).length && !Object.keys(fl).length) { toast('No DBs loaded'); return; }
+  let bocN = 0, flN = 0, skip = 0;
   data = data.map(l => {
-    Object.keys(curbDB).forEach(c => {
-      const re = new RegExp('\\b'+c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','g');
-      l = l.replace(re, curbDB[c]);
+    const dm = l.match(/"([^"]*)"/);
+    if (!dm) return l;
+    const desc = dm[1];
+    let db = null, which = null;
+    if (/\bRBCB\d*\b/.test(desc))      { db = boc; which = 'boc'; }
+    else if (/\bRCFL\d*\b/.test(desc)) { db = fl;  which = 'fl';  }
+    if (!db || !Object.keys(db).length) return l;
+    let nd = desc, hit = false;
+    // longest codes first so e.g. L624 wins over any shorter prefix
+    Object.keys(db).sort((a,b)=>b.length-a.length).forEach(c => {
+      const re = new RegExp('\\b'+c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b');
+      if (re.test(nd)) { nd = nd.replace(re, db[c]); hit = true; }
     });
-    return l;
+    if (!hit) { skip++; return l; }
+    if (which === 'boc') bocN++; else flN++;
+    return l.replace(/"([^"]*)"/, () => '"' + nd + '"');
   });
   pushToEditor();
-  toast('Curb DB applied');
+  toast(`Curb applied — ${bocN} RBCB (back of curb), ${flN} RCFL (flow line)` + (skip ? `, ${skip} marker w/o code` : ''));
 }
 
 function markDelete() {
